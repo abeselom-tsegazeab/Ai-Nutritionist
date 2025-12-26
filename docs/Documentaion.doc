@@ -1,0 +1,185 @@
+ LLM-Integrated FastAPI Service for Personalized Nutritional Recommendations for FitnessCoaches
+ (AI-Nutritionist)
+1. Executive Summary
+The AI-Nutritionist project proposes the development of a cutting-edge, three-tier web application designed to revolutionize personalized nutritional planning within the fitness coaching industry. The core innovation lies in integrating a Large Language Model (TinyLLaMA/GPT-OSS) with a mathematically precise Constraint Satisfaction Problem (CSP) Solver. This hybrid approach ensures the automatic generation of meal plans that are not only textually coherent and user-friendly but also rigorously adhere to strict macronutrient and caloric targets (e.g., within a +/- 5% deviation). The solution, built upon a high-performance FastAPI backend and deployed via a responsive React frontend, directly addresses the scalability and accuracy limitations inherent in manual planning processes. This system is designed as a non-medical tool to enhance coach efficiency, improve client adherence, and serve as a robust, portfolio-level demonstration of multi-domain CSE expertise (AI/ML, Microservices, and Security).
+2. Problem Statement and Justification
+2.1. Background and Context
+The demand for hyper-personalized health and fitness coaching has surged, making detailed nutritional guidance a cornerstone of successful client outcomes. However, the operational complexity faced by coaches is significant. Manually creating a customized 7-day meal plan for a single client—requiring consideration for exact calorie needs, the macro split (Protein, Carbohydrates, Fat), specific dietary restrictions (e.g., vegan, ketogenic), food allergies, and cost factors—can consume several hours. As a coach’s clientele grows, this manual effort quickly becomes an insurmountable bottleneck, limiting their capacity for business growth and increasing the risk of human error in nutritional calculation.
+2.2. Problem Definition
+The fundamental problem addressed is the lack of an efficient, automated, and demonstrably accurate system that can bridge the gap between hard nutritional constraints and flexible, human-readable meal plan generation. Existing software solutions often force coaches to rely on static templates or complex spreadsheet manipulation.
+ This project seeks to solve:
+ How can we automate and personalize nutritional plan generation for fitness coaches using an AI-driven system that combines numerical accuracy (via CSP), linguistic flexibility (via LLM), and real-world usability?
+2.3. Significance and Justification
+The significance of the AI-Nutritionist solution is quantifiable across several dimensions:
+Operational Efficiency: By reducing the time spent on meal plan generation from hours to minutes, the system provides a competitive advantage for coaches, enabling immediate scalability and faster client onboarding.
+Accuracy and Reliability: The integration of a mathematically verified CSP solver minimizes human calculation errors, ensuring that all generated plans meet the required macro targets with a high degree of precision (+/- 5%), which is critical for client progress.
+Advanced Technical Demonstration: The project serves as a capstone example of advanced Computer Science and Engineering applications, integrating contemporary technologies like LLM fine-tuning, asynchronous API design, and containerization.
+Market Relevance: By focusing on non-medical, performance-based nutritional advice delivered via a secure web platform, the system targets a large, underserved segment of the digital fitness market.
+2.4. Expected Outcomes
+The successful completion of the AI-Nutritionist project is expected to deliver the following tangible outcomes:
+A Functional Web Application (MVP): A fully deployed, secure, and responsive web interface for coaches to manage client profiles and generate/export meal plans.
+Validated Core Engine: A high-fidelity LLM/CSP hybrid engine proven to meet Objective O.1 (macro adherence within 5% deviation) and Objective O.2 (95% successful generation across four diet types).
+Scalable and Documented Architecture: A modular microservice system, complete with detailed design documentation (UML, Block Diagrams) and optimized for low-latency performance (Objective O.3).
+3. Project Objectives (SMART)
+The project objectives strictly adhere to the SMART framework, ensuring they are Specific, Measurable, Achievable, Relevant, and Time-bound.
+
+Specific (S)
+Each objective is narrowly defined, focusing on a single, clear outcome. The focus is specifically on implementing the /generate_plan endpoint and supporting a minimum of four distinct diet types, providing an unambiguous target for development.
+Measurable (M)
+The success criteria are defined using hard metrics. Performance is quantified by the +/- 5% macro adherence and the 95% successful generation rate. Usability and responsiveness are measured by the API response time (< 2 seconds), allowing for objective evaluation during the Quality Assurance (QA) phase.
+Achievable (A)
+Given the team’s composition, which includes specialized roles in AI Engineering, Backend Development, and Security, the objectives are realistic. The use of existing, proven frameworks (FastAPI, React) and accessible LLMs (TinyLLaMA/GPT-OSS via LoRA fine-tuning) minimizes research risk and focuses resources on integration and optimization.
+Relevant (R)
+All three objectives directly contribute to solving the core problem: automating and personalizing the nutritional planning process. The achievement of these objectives guarantees that the final delivered system meets the fundamental needs of fitness coaches for accuracy and efficiency.
+Time-bound (T)
+Each objective is linked to a specific deadline within the 16-week project timeline. This structured approach, managed by the Project Manager, ensures that development proceeds in a phased manner, allowing sufficient time for rigorous testing and bug fixing before the final deployment milestone.
+Project Objectives for MVP Phase
+Objective ID
+Description
+Key Metric / Target
+Target Date
+O.1
+Core Plan Generation: Implement a backend API endpoint (/generate_plan) that accepts client nutritional goals and dietary restrictions.
+Generated plans must adhere to target macronutrient goals with a maximum deviation of +/- 5%.
+Completion of core function within 10 weeks.
+O.2
+Multi-Diet Support: Integrate support for at least four distinct diet types (e.g., Standard, Vegetarian, Vegan, Ketogenic) into the generation model and UI.
+Model must successfully generate a valid, macro-compliant plan for 95% of generation requests across the four supported diets.
+Feature implementation by week 14.
+O.3
+Deployment and Usability: Deploy the system as a functional web application, integrating the backend FastAPI service.
+Achieve an average API response time for plan generation of < 2 seconds for 80% of requests.
+Full-stack deployment and testing by week 16.
+
+4. Methodology and Technical Approach
+4.1. System Architecture Overview
+The AI-Nutritionist system employs a modern, decoupled microservice architecture consisting of five primary components. This design philosophy maximizes fault isolation, allows components to be scaled independently, and clearly delineates responsibilities between the data processing, logic, and presentation layers.
+
+
+Component Breakdown:
+Presentation Tier (Frontend): This is the user interface layer built with React. It is responsible for handling all user interaction, including secure login, client data input forms, real-time visualization of macro goals, and the display of the generated meal plans and grocery lists. It strictly uses RESTful API calls to communicate with the Backend and contains no core business logic. Its focus is solely on providing a fast, responsive, and intuitive user experience (UX) across desktop and mobile devices.
+Application Tier (Backend API): Serving as the core operational brain, this layer is developed using FastAPI (Python). It manages all critical business logic, including: user authentication (JWT handling), routing client requests to the appropriate services, performing validation checks, and orchestrating the multi-step plan generation process (CSP -> LLM Service). The API acts as the secure, non-blocking gateway between the frontend and the intelligence core.
+Data Tier (Database): This tier manages data persistence using a flexible, scalable solution (SQLite/Firebase). It securely stores three main datasets: coach and client user profiles (encrypted PII), historical plan generation logs, and the crucial Nutritional Database. This database contains structured, indexed data (food items, calories, macros, and dietary tags) essential for the Constraint Solver's calculations. The database ensures persistent storage of client progress and historical plan data for future model iteration and coach review.
+LLM Service: The dedicated intelligence layer, hosting the fine-tuned TinyLLaMA/GPT-OSS model. It receives highly structured JSON data (the macro-compliant meal components identified by the CSP solver) from the Backend API. Its singular role is to transform this raw data into a coherent, daily meal plan narrative with recipe suggestions and a detailed grocery list. This service is designed to be containerized (e.g., Docker) for independent scaling and easy updates.
+PDF Module (ReportLab): A dedicated utility integrated within or alongside the Backend API. It leverages the ReportLab Python library to convert the final generated plan data into a professional, printable PDF document. This module ensures that coaches can provide their clients with a polished, branded report suitable for offline use or physical distribution.
+4.2. UML Component Diagram
+To illustrate the structural organization and definition of the components, their interfaces, and the relationships and dependencies between them, the following UML Component Diagram is used:
+
+Figure-1: High level system architecture.
+
+Figure-2: Tiers of the system.
+
+The diagram highlights the unidirectional dependencies: the Frontend requires the Backend API; the Backend API depends on the Data Tier (for CRUD operations), the LLM Service (for generation), and the PDF Module. This structure ensures a clean separation of concerns, minimizes tight coupling, and facilitates independent development, deployment, and testing.
+4.3. Concept Synthesis Plan (Advanced Concepts Implementation Detail)
+The successful delivery of the AI-Nutritionist project hinges on the sophisticated integration of three key advanced CSE concepts:
+4.3.1. LLM-Driven Constraint-Based Generation (The Hybrid Approach)
+Concept: This technique merges deterministic mathematical optimization with the linguistic fluency of a Generative AI model. The system guarantees numerical accuracy first via optimization, then uses the LLM for contextual enrichment.
+Implementation Detail:
+CSP Execution: The FastAPI service, upon receiving a request, first invokes the Constraint Satisfaction Problem (CSP) Solver (utilizing a library like PuLP for linear programming). This solver operates on the highly structured Nutritional Database to mathematically select the necessary food items and exact quantities (in grams/ounces) that satisfy all macro constraints (+/- 5%) and dietary filters. The output is a raw, numerically verified JSON payload.
+LLM Enhancement: This CSP-generated JSON is then injected into a carefully designed prompt template. The prompt instructs the fine-tuned LLM (TinyLLaMA/GPT-OSS via LoRA on Google Colab) to translate the raw JSON into natural language, segmenting it into meals, adding preparation suggestions, and concurrently compiling the total unique ingredients into a formatted grocery list.
+4.3.2. Asynchronous High-Performance API Gateway (Backend)
+Concept: Since CSP solving and LLM inference are computationally intensive tasks, an asynchronous architecture is mandatory to maintain system responsiveness and high user throughput.
+Implementation Detail: The Application Tier, built with FastAPI, will employ Python's async def pattern for its core endpoints. When a plan generation request is received, the FastAPI thread will non-blockingly issue an HTTP request to the isolated LLM Service. The thread remains available to handle other concurrent user requests, processing the response from the LLM Service upon its eventual return. This ensures the system can handle a large volume of coach requests simultaneously, critical for achieving Objective O.3.
+4.3.3. Security Implementation (JWT and Input Validation)
+Concept: The system must adhere to modern security standards for authentication, authorization, and data integrity due to the handling of client PII and sensitive health goals.
+Implementation Detail: The Security Engineer (Abeselom Tsegazeab) will implement JSON Web Tokens (JWT) for stateless, secure session management. Authorization requires a valid JWT header for all requests to secure endpoints. Furthermore, the Backend Developer (Abdullah Omar) will integrate and enforce strict OWASP-based input validation on all data fields received from the frontend, including sanitizing string inputs and boundary checking numeric inputs to prevent common vulnerabilities.
+5. Team Roles, Work Distribution, Timeline, and Milestones
+The project will be executed by the CSE/SE Team, comprising 10 specialized roles designed to provide comprehensive coverage across all phases of the system development lifecycle (SDLC), documentation, and quality assurance.
+5.1. Team Roles and Distribution
+The team structure is optimized for parallel development across the front-end, back-end, and dedicated AI/ML and Security layers, fostering expertise and efficiency.
+Role
+Name
+Key Responsibilities
+Focus Area
+Project Manager / Scrum Master
+Abebe Kumbi
+Manage timeline, meetings, sprint planning, risk tracking, and stakeholder communication.
+Management, Timeline, Risk
+Lead Architect
+Afomiya Legesse
+Design the architecture diagrams (UML, Block), ensure modularity, scalability, and code structure integrity across all services.
+Architecture, System Design
+AI Engineer
+Abdi Dawud
+Design and fine-tune the LLM model (TinyLLaMA/GPT-OSS), implement prompt engineering strategies, and integrate the model with FastAPI.
+LLM Service, Integration (O.1, O.2)
+AI Assistant / Data Specialist
+Meron Tilahun
+Collect and preprocess the nutritional datasets, manage the data pipeline for LLM fine-tuning, and maintain the Nutritional Database.
+Data Tier, Data Quality
+Backend Developer
+Abdullah Omar
+Develop core FastAPI routes, manage API logic, connect with the LLM Service, and handle main server-side tasks.
+Application Tier, LLM Integration
+Database Engineer
+Meti Jemal
+Design and implement the database schema (SQLite/Firebase), optimize queries, and manage data persistence for client and plan history.
+Data Tier, Schema Design
+Frontend Developer
+Olyad Negero
+Create a user web interface (React), implement client input forms, integrate with the Backend API, and display generated plans.
+Presentation Tier (Implementation)
+UI/UX Designer
+Mihret Abebe
+Design interface mockups, ensure usability and responsiveness, and implement the PDF export feature (ReportLab integration).
+Presentation Tier (Design), PDF Module
+Security Engineer
+Abeselom Tsegazeab
+Implement JWT authentication, conduct OWASP-based input validation, and manage security testing and ethical data handling protocols.
+Security, Authentication
+QA & Documentation Lead
+Mohammed Kedir
+Conduct rigorous testing (unit, integration, and performance), compile the PAD/SRS documents, and prepare the demo materials and video.
+Testing, Documentation (O.3)
+
+
+
+
+5.2. High-Level Timeline and Milestones (16-Week MVP) and Work Distribution
+The project follows a 16-week timeline structured into five distinct phases, employing an Agile methodology. Each phase culminates in a key milestone, providing clear checkpoints for progress verification and risk assessment. The work distribution ensures that parallel development across the different tiers is coordinated and efficiently managed.
+Phase (Weeks)
+Milestone (M)
+Key Activity Focus
+Key Role Responsibilities
+1 (W1-2)
+M.0: Planning & Setup
+Architectural Design, Environment Setup, Schema Draft.
+Abebe Kumbi (PM): Leads sprint planning, risk setup. Afomiya Legesse (Architect): Finalizes all component designs. Meti Jemal (DB): Designs initial schema. Mohammed Kedir (QA): Compiles the PAD.
+2 (W3-6)
+M.1: Nutritional Database Finalized & ML Prototype
+Data sourcing (2000+ items), LLM fine-tuning setup, Constraint Solver logic implementation.
+Meron Tilahun (Data): Completes M.1 (Database). Abdi Dawud (AI): Finalizes LLM fine-tuning setup (LoRA) and builds CSP solver logic.
+3 (W7-10)
+M.2: Core FastAPI Endpoints Functional
+Authentication (JWT), CRUD API development, Asynchronous LLM Service integration.
+Abdullah Omar (Backend): Develops M.2 and implements async def for LLM calls (O.1 completion). Abeselom Tsegazeab (Security): Implements JWT and OWASP validation.
+4 (W11-14)
+M.3: Full Frontend UI/UX complete
+Client input forms, plan display interface, Multi-Diet UI logic, PDF report module integration.
+Olyad Negero (Frontend): Implements React UI and API calls. Mihret Abebe (UI/UX): Integrates the ReportLab PDF module. Abdi Dawud (AI): Finalizes Multi-Diet logic (O.2 completion).
+5 (W15-16)
+M.4: MVP Tested and Deployed
+Rigorous testing (functional, performance), Bug fixing, Deployment, Final Documentation.
+Mohammed Kedir (QA): Leads final testing, verifies O.3 (response time). Afomiya Legesse (Architect): Oversees deployment (CI/CD). Abebe Kumbi (PM): Final project closeout and documentation.
+
+The timeline ensures that the critical, high-risk components (LLM integration and CSP solver) are addressed early (Phases 2-3), allowing the later phases to focus on integration, user experience, and mandatory quality assurance prior to final deployment.
+
+6. Risk Analysis & Mitigation
+A thorough risk analysis identifies potential threats to the project’s schedule, quality, and security. Mitigation strategies have been designed to proactively manage these risks.
+Technical Risks
+The primary technical concern is Model Accuracy and Convergence. The LLM model may struggle to consistently translate the CSP's structured data into human-readable text while strictly maintaining numerical adherence, potentially failing the +/- 5% macro goal. 
+This is mitigated by the Hybrid Approach: 
+Numerical calculation is handled deterministically by the CSP solver first. Abdi Dawud and Meron Tilahun will implement a continuous, automated validation pipeline that tests the LLM output against the initial CSP constraints immediately after text generation, flagging deviations for immediate correction.
+A second critical technical risk is API Latency and Throughput. The multi-step process (database query, CSP optimization, LLM inference, and PDF generation) poses a significant risk of exceeding the 2-second response time target. To counter this, the team implements a decoupled, Asynchronous Architecture using FastAPI. Abdullah Omar will utilize non-blocking I/O throughout the backend, and Afomiya Legesse will ensure the LLM Service is deployed with dedicated computational resources (containerization) to optimize inference speed. Early performance stress testing will be conducted in Week 8 to proactively identify and resolve bottlenecks.
+Data and Security Risks
+The most critical risk is Data Privacy and Confidentiality. The system handles sensitive client data (dietary preferences, PII, and health goals). A breach could lead to severe ethical and reputational consequences. 
+Mitigation is paramount:
+Abeselom Tsegazeab will enforce multi-layered security. This includes mandatory JSON Web Tokens (JWT) for all API access, robust role-based access control (RBAC) to ensure coaches only see their clients' data, and end-to-end encryption for all data stored in the Data Tier and transmitted over the network (HTTPS/WSS). 
+Furthermore, Abdullah Omar implements rigorous OWASP-based input sanitization to prevent data injection attacks.
+Scope and Operational Risks
+The risk of Scope Creep—the uncontrolled expansion of features beyond the defined MVP (e.g., requests for medical integration or native mobile apps)—is high due to the nature of the project. 
+This is mitigated by Rigid Scope Control:
+The Project Manager, Abebe Kumbi, will manage a formal change request process, requiring re-evaluation of the timeline and resources for any proposed changes. All features outside the MVP scope are explicitly documented as Out of Scope. 
+Finally, Team Dependency is a risk where the loss of a specialized engineer (e.g., AI or Security) could halt progress. 
+This is mitigated by Knowledge Redundancy and cross-training:
+core components (like LLM integration and JWT setup) will be documented thoroughly by Mohammed Kedir and pair-programmed by the relevant team members (e.g., AI Engineer and Backend Developer) to ensure knowledge is shared and the project can continue if a team member is unavailable.

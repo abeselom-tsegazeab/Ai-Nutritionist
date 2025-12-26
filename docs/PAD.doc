@@ -1,0 +1,27 @@
+ Problem Analysis Document (PAD)
+1. Executive Summary
+The AI Nutritionist for Fitness Coaches is a web-based intelligent system designed to assist fitness professionals in creating personalized meal plans, macronutrient breakdowns, and grocery lists for their clients. The system leverages artificial intelligence, specifically Large Language Models (LLMs), to automate meal planning based on user inputs such as dietary goals, calorie targets, and dietary preferences (e.g., vegan, keto).
+The solution integrates concepts from AI & Machine Learning, Software Architecture, Data & Algorithms, and Software Security. It is designed as a scalable, modular system using FastAPI (backend), React.js (frontend), and TinyLLaMA/Mistral-7B as the AI model. The model is fine-tuned on curated nutrition data using Google Colab GPUs, then deployed as a backend service accessible to the web app.
+This project demonstrates real-world application of intelligent systems in the health and fitness domain, while emphasizing ethical design, data privacy, and professional software development standards.
+
+2. Problem Statement and Justification
+2.1 Background
+Fitness and nutrition coaching are increasingly data-driven professions, yet coaches spend significant time manually designing meal plans and adjusting them per client needs. This manual process is inefficient and prone to error, especially when dealing with multiple clients.
+AI-powered systems can automate the generation of customized diet plans, ensuring nutritional balance, adherence to dietary restrictions, and faster client service.
+2.2 Problem Definition
+Currently, there is no accessible AI-based nutrition planning tool tailored for fitness coaches that integrates automatic meal generation, macronutrient computation, and grocery list creation. Coaches rely on static templates or third-party apps with limited flexibility.
+This project aims to build an AI-driven web application that:
+Accepts client goals, calorie targets, and diet type.
+
+
+Automatically generates a complete 7-day meal plan and grocery list.
+
+
+Summarizes nutritional macros and allows export as PDF.
+
+
+Ensures privacy and offline-friendly operation using local or self-hosted AI models.
+
+
+2.3 Justification
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
