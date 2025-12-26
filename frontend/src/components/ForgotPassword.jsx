@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 
 const ForgotPassword = () => {
@@ -62,15 +63,20 @@ const ForgotPassword = () => {
       if (response.ok) {
         // Show success message
         setIsSubmitted(true);
+        toast.success('Password reset instructions sent to your email!');
       } else {
+        const errorMessage = data.detail || 'Failed to send password reset email. Please try again.';
         setErrors({
-          general: data.detail || 'Failed to send password reset email. Please try again.'
+          general: errorMessage
         });
+        toast.error(errorMessage);
       }
     } catch (error) {
+      const errorMessage = error.message || 'An error occurred. Please try again.';
       setErrors({
-        general: 'An error occurred. Please try again.'
+        general: errorMessage
       });
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

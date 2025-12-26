@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 
 const Login = () => {
@@ -11,6 +12,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { showSuccess, showError } = useToast();
 
   const handleChange = (e) => {
     setFormData({
@@ -53,18 +55,45 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      // In a real app, you would make an API call to login
+      // const response = await fetch('http://localhost:8000/auth/login', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     email: formData.email,
+      //     password: formData.password
+      //   })
+      // });
+      // 
+      // const data = await response.json();
+      // 
+      // if (response.ok) {
+      //   // Store tokens, redirect, etc.
+      //   showSuccess('Login successful!');
+      //   navigate('/');
+      // } else {
+      //   throw new Error(data.detail || 'Login failed');
+      // }
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Mock login success - in a real app, you would handle actual authentication
       console.log('Login attempt with:', formData);
       
+      // Show success toast
+      showSuccess('Login successful!');
+      
       // Redirect to home page after successful login
       navigate('/');
     } catch (error) {
+      const errorMessage = error.message || 'Login failed. Please check your credentials and try again.';
       setErrors({
-        general: 'Login failed. Please check your credentials and try again.'
+        general: errorMessage
       });
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }

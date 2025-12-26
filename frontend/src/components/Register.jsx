@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 
 const Register = () => {
@@ -73,12 +74,17 @@ const Register = () => {
       // Mock registration success - in a real app, you would handle actual registration
       console.log('Registration attempt with:', formData);
       
+      // Show success toast
+      toast.success('Registration successful!');
+      
       // Redirect to home page after successful registration
       navigate('/');
     } catch (error) {
+      const errorMessage = error.message || 'Registration failed. Please try again.';
       setErrors({
-        general: 'Registration failed. Please try again.'
+        general: errorMessage
       });
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
