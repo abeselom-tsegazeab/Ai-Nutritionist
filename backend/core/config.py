@@ -8,6 +8,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ENVIRONMENT: str = "development"
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_SECURE: bool = False
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    FROM_EMAIL: str = ""
+    EMAIL_ADDRESS: str = ""
+    EMAIL_PASSWORD: str = ""
+    FRONTEND_URL: str = "http://localhost:5173"
+    EMAIL_USE_TLS: bool = True
 
     class Config:
         env_file = ".env"

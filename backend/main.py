@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import engine
 from database.models import Base
-
+from core.security import get_rate_limit_middleware
 
 
 from routers import mealplan, auth
@@ -14,6 +14,9 @@ app = FastAPI(
     version="1.0.0"
 )
 Base.metadata.create_all(bind=engine)
+
+# Add rate limiting middleware
+app = get_rate_limit_middleware(app)
 
 # CORS
 app.add_middleware(

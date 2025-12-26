@@ -60,22 +60,16 @@ const Navbar = () => {
                 Home
               </Link>
               <Link 
-                to="/meal-plans" 
+                to="/meal-planner" 
                 className="text-white dark:text-gray-200 hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 transform"
               >
-                Meal Plans
+                Meal Planner
               </Link>
               <Link 
-                to="/about" 
+                to="/features" 
                 className="text-white dark:text-gray-200 hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 transform"
               >
-                About
-              </Link>
-              <Link 
-                to="/contact" 
-                className="text-white dark:text-gray-200 hover:text-blue-300 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 transform"
-              >
-                Contact
+                Features
               </Link>
             </div>
           </div>
@@ -151,7 +145,7 @@ const Navbar = () => {
                   Login
                 </Link>
                 <Link 
-                  to="/signup" 
+                  to="/register" 
                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-lg hover:shadow-blue-500/25"
                 >
                   Sign Up
@@ -217,21 +211,14 @@ const Navbar = () => {
             Home
           </Link>
           <Link 
-            to="/meal-plans" 
+            to="/meal-planner" 
             className="text-white dark:text-gray-200 hover:text-blue-300 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300"
             onClick={() => setIsMenuOpen(false)}
           >
-            Meal Plans
+            Meal Planner
           </Link>
           <Link 
-            to="/about" 
-            className="text-white dark:text-gray-200 hover:text-blue-300 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            About
-          </Link>
-          <Link 
-            to="/contact" 
+            to="/features" 
             className="text-white dark:text-gray-200 hover:text-blue-300 block px-3 py-2 rounded-md text-base font-medium transition-all duration-300"
             onClick={() => setIsMenuOpen(false)}
           >
@@ -284,7 +271,7 @@ const Navbar = () => {
                 Login
               </Link>
               <Link 
-                to="/signup" 
+                to="/register" 
                 className="block w-full text-center bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-md text-base font-medium transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25"
                 onClick={() => setIsMenuOpen(false)}
               >
