@@ -17,6 +17,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark mode specific styles */
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   padding: 0;
