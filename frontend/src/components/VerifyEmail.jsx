@@ -36,17 +36,29 @@ const VerifyEmail = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('http://localhost:8000/auth/verify-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verification_code: verificationCode
+        })
+      });
       
-      // Mock success - in a real app, you would call the backend API
-      console.log('Verifying email with code:', verificationCode);
+      const data = await response.json();
       
-      // Show success message
-      setIsVerified(true);
+      if (response.ok) {
+        // Show success message
+        setIsVerified(true);
+      } else {
+        setErrors({
+          general: data.detail || 'Invalid verification code. Please try again.'
+        });
+      }
     } catch (error) {
       setErrors({
-        general: 'Invalid verification code. Please try again.'
+        general: 'An error occurred. Please try again.'
       });
     } finally {
       setIsLoading(false);
@@ -54,14 +66,38 @@ const VerifyEmail = () => {
   };
 
   const handleResendCode = async () => {
+    setIsLoading(true);
     try {
-      // Simulate API call to resend verification code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Resending verification code...');
+      // In a real app, we would need to pass the user's email to resend the verification code
+      // This would typically be retrieved from the user's session or passed as a parameter
+      const email = prompt('Please enter your email address to resend the verification code:');
+      if (!email) return;
+      
+      const response = await fetch('http://localhost:8000/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('Verification code resent successfully');
+      } else {
+        setErrors({
+          general: data.detail || 'Failed to resend verification code. Please try again.'
+        });
+      }
     } catch (error) {
       setErrors({
-        general: 'Failed to resend verification code. Please try again.'
+        general: 'An error occurred. Please try again.'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -65,17 +65,30 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('http://localhost:8000/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reset_code: formData.resetCode,
+          new_password: formData.password
+        })
+      });
       
-      // Mock success - in a real app, you would call the backend API with reset code and new password
-      console.log('Password reset with code:', formData.resetCode, 'and password:', formData.password);
+      const data = await response.json();
       
-      // Show success message
-      setIsSubmitted(true);
+      if (response.ok) {
+        // Show success message
+        setIsSubmitted(true);
+      } else {
+        setErrors({
+          general: data.detail || 'Failed to reset password. Please try again.'
+        });
+      }
     } catch (error) {
       setErrors({
-        general: 'Failed to reset password. Please try again.'
+        general: 'An error occurred. Please try again.'
       });
     } finally {
       setIsLoading(false);
