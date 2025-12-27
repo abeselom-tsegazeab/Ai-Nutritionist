@@ -1,4 +1,5 @@
 import secrets
+import string
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from database.models import User
@@ -9,13 +10,13 @@ from core.email_service import email_service
 class EmailVerification:
     @staticmethod
     def generate_verification_token() -> str:
-        """Generate a secure email verification token"""
-        return secrets.token_urlsafe(32)
+        """Generate a 6-digit numeric OTP for email verification"""
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
     
     @staticmethod
     def generate_password_reset_token() -> str:
-        """Generate a secure password reset token"""
-        return secrets.token_urlsafe(32)
+        """Generate a 6-digit numeric OTP for password reset"""
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
     
     @staticmethod
     def send_verification_email(user_email: str, verification_token: str):
@@ -39,7 +40,7 @@ class EmailVerification:
             return None
         
         # Verify the token hasn't expired and update user status
-        user.email_verified = True
+        user.is_verified = True
         user.email_verification_token = None
         user.email_verification_expires = None
         db.commit()

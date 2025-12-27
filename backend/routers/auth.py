@@ -18,6 +18,7 @@ from slowapi.util import get_remote_address
 from core.token_manager import TokenManager
 from core.email_utils import EmailVerification
 from core.audit_logger import log_user_login, log_failed_login, log_user_registration, log_security_event
+import logging
 from core.tfa_manager import TwoFactorAuth
 from datetime import datetime, timedelta
 
@@ -36,7 +37,15 @@ def verify_password(plain_password, hashed_password):
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    # Ensure password doesn't exceed bcrypt's 72-byte limit
+    # Convert to bytes to properly count byte length, not character length
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        # Truncate to 72 bytes and decode back to string
+        truncated_password = password_bytes[:72].decode('utf-8', errors='ignore')
+    else:
+        truncated_password = password
+    return pwd_context.hash(truncated_password)
 
 
 def validate_email(email: str) -> bool:
@@ -46,7 +55,11 @@ def validate_email(email: str) -> bool:
 
 def validate_password(password: str) -> bool:
     # Password must be at least 8 characters, contain uppercase, lowercase, number, and special character
+    # Also must not exceed 72 bytes due to bcrypt limitation
     if len(password) < 8:
+        return False
+    # Check if password exceeds 72 bytes when encoded as UTF-8
+    if len(password.encode('utf-8')) > 72:
         return False
     if not re.search(r"[A-Z]", password):  # Has uppercase
         return False
@@ -147,7 +160,7 @@ def register_user(request: Request, user: UserCreate, db: Session = Depends(get_
     if not validate_password(user.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
+            detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character, and not exceed 72 bytes"
         )
     
     # Check if user already exists
@@ -180,7 +193,11 @@ def register_user(request: Request, user: UserCreate, db: Session = Depends(get_
     db.refresh(db_user)
     
     # Send verification email (in a real app, this would be done asynchronously)
-    EmailVerification.send_verification_email(db_user.email, verification_token)
+    try:
+        EmailVerification.send_verification_email(db_user.email, verification_token)
+    except Exception as e:
+        # Log the error but don't fail the registration if email sending fails
+        logging.error(f"Failed to send verification email to {db_user.email}: {str(e)}")
     
     # Log user registration
     ip_address = request.client.host
@@ -365,9 +382,13 @@ def resend_verification(email: str, db: Session = Depends(get_db)):
     db.commit()
     
     # Send verification email
-    EmailVerification.send_verification_email(user.email, verification_token)
-    
-    return {"message": "Verification email sent successfully"}
+    try:
+        EmailVerification.send_verification_email(user.email, verification_token)
+        return {"message": "Verification email sent successfully"}
+    except Exception as e:
+        logging.error(f"Failed to send verification email to {user.email}: {str(e)}")
+        # Don't fail the request if email sending fails
+        return {"message": "Verification email could not be sent, but user record is valid"}
 
 
 @router.post("/forgot-password")
@@ -388,7 +409,11 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
     db.commit()
     
     # Send password reset email
-    EmailVerification.send_password_reset_email(user.email, reset_token)
+    try:
+        EmailVerification.send_password_reset_email(user.email, reset_token)
+    except Exception as e:
+        logging.error(f"Failed to send password reset email to {user.email}: {str(e)}")
+        # Continue without throwing an error to prevent user enumeration
     
     return {"message": "If an account with this email exists, a password reset link has been sent"}
 
@@ -416,7 +441,7 @@ def reset_password(reset_code: str, new_password: str, db: Session = Depends(get
     if not validate_password(new_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
+            detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character, and not exceed 72 bytes"
         )
     
     # Hash new password

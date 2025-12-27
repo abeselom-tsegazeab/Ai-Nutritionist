@@ -13,19 +13,47 @@ logger = logging.getLogger(__name__)
 class EmailService:
     def __init__(self):
         # Use the existing .env variable names
-        self.smtp_server = settings.SMTP_HOST if hasattr(settings, 'SMTP_HOST') else settings.SMTP_SERVER
-        self.smtp_port = settings.SMTP_PORT
-        self.email_address = settings.FROM_EMAIL if hasattr(settings, 'FROM_EMAIL') else settings.EMAIL_ADDRESS
-        self.email_password = settings.SMTP_PASS if hasattr(settings, 'SMTP_PASS') else settings.EMAIL_PASSWORD
+        self.smtp_server = getattr(settings, 'SMTP_HOST', getattr(settings, 'SMTP_SERVER', 'smtp.gmail.com'))
+        self.smtp_port = int(getattr(settings, 'SMTP_PORT', 587))
         
-        # Determine if using secure connection based on port
-        if hasattr(settings, 'SMTP_SECURE'):
-            self.use_tls = settings.SMTP_SECURE
+        # Check for different possible email address variables
+        self.email_address = getattr(settings, 'FROM_EMAIL', '')
+        if not self.email_address:
+            self.email_address = getattr(settings, 'EMAIL_ADDRESS', '')
+        
+        # Check for different possible password variables
+        self.email_password = getattr(settings, 'SMTP_PASS', '')
+        if not self.email_password:
+            self.email_password = getattr(settings, 'EMAIL_PASSWORD', '')
+        
+        # Determine if using secure connection based on settings
+        self.use_tls = getattr(settings, 'SMTP_SECURE', getattr(settings, 'EMAIL_USE_TLS', True))
+        
+        # Validate SMTP port
+        if self.smtp_port not in [25, 465, 587]:
+            logger.warning(f"Unusual SMTP port {self.smtp_port} detected. Common ports are 25, 465, 587.")
+        
+        # Determine if SSL should be used based on port if TLS is not explicitly set
+        # For standard configuration: port 465 = SSL, ports 25/587 = TLS
+        if self.smtp_port == 465:
+            # Port 465 is typically for SSL
+            self.use_ssl = True
+            self.use_tls = False  # Override if user explicitly set TLS but used port 465
+        elif self.smtp_port in [25, 587]:
+            # Standard ports for TLS
+            # Keep user's TLS setting for these ports
+            self.use_ssl = False
         else:
-            self.use_tls = settings.EMAIL_USE_TLS if hasattr(settings, 'EMAIL_USE_TLS') else True
+            # For other ports, default to TLS if not specified otherwise
+            self.use_ssl = False
 
     def send_email(self, recipient_email: str, subject: str, html_content: str, text_content: Optional[str] = None):
         """Send an email using SMTP"""
+        # Check if email configuration is properly set up
+        if not self.email_address or not self.email_password or not self.smtp_server:
+            logger.warning(f"Email configuration is not set up. Skipping email to {recipient_email}")
+            return False
+            
         try:
             # Create message
             message = MIMEMultipart("alternative")
@@ -49,9 +77,14 @@ class EmailService:
                     server.starttls(context=context)
                     server.login(self.email_address, self.email_password)
                     server.sendmail(self.email_address, recipient_email, message.as_string())
-            else:
+            elif self.use_ssl:
                 # For SSL connections (like port 465)
                 with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port, context=context) as server:
+                    server.login(self.email_address, self.email_password)
+                    server.sendmail(self.email_address, recipient_email, message.as_string())
+            else:
+                # For non-secure connections
+                with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                     server.login(self.email_address, self.email_password)
                     server.sendmail(self.email_address, recipient_email, message.as_string())
             

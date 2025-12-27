@@ -29,7 +29,7 @@ app.add_middleware(
 
 # ---Routers---
 app.include_router(mealplan.router, prefix="/api")
-app.include_router(auth.router, prefix="/api")
+app.include_router(auth.router)
 
 @app.get("/")
 def home():

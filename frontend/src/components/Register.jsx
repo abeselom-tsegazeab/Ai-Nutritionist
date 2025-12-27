@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,8 +12,8 @@ const Register = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, loading, error } = useAuth();
   const { theme } = useTheme();
 
   const handleChange = (e) => {
@@ -65,28 +66,28 @@ const Register = () => {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await register(formData.name, formData.email, formData.password);
       
-      // Mock registration success - in a real app, you would handle actual registration
-      console.log('Registration attempt with:', formData);
-      
-      // Show success toast
-      toast.success('Registration successful!');
-      
-      // Redirect to home page after successful registration
-      navigate('/');
+      if (result.success) {
+        // Show success toast
+        toast.success('Registration successful!');
+        
+        // Redirect to home page after successful registration
+        navigate('/');
+      } else {
+        const errorMessage = result.error || 'Registration failed';
+        setErrors({
+          general: errorMessage
+        });
+        toast.error(errorMessage);
+      }
     } catch (error) {
       const errorMessage = error.message || 'Registration failed. Please try again.';
       setErrors({
         general: errorMessage
       });
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -214,11 +215,11 @@ const Register = () => {
             <div className="animate-slide-in-left delay-500">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
               >
                 <span className="relative z-10">
-                  {isLoading ? (
+                  {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Creating account...
@@ -227,7 +228,7 @@ const Register = () => {
                     'Create Account'
                   )}
                 </span>
-                {!isLoading && (
+                {!loading && (
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 opacity-0 hover:opacity-100 transition-opacity duration-300 -z-10"></div>
                 )}
               </button>

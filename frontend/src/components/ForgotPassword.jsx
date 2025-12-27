@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const ForgotPassword = () => {
   const [formData, setFormData] = useState({
     email: ''
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const navigate = useNavigate();
+  const { loading, error } = useAuth();
   const { theme } = useTheme();
 
   const handleChange = (e) => {
@@ -45,8 +46,6 @@ const ForgotPassword = () => {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
     try {
       const response = await fetch('http://localhost:8000/auth/forgot-password', {
         method: 'POST',
@@ -77,8 +76,6 @@ const ForgotPassword = () => {
         general: errorMessage
       });
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -144,11 +141,11 @@ const ForgotPassword = () => {
                 <div className="animate-slide-in-left delay-200">
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={loading}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
                   >
                     <span className="relative z-10">
-                      {isLoading ? (
+                      {loading ? (
                         <div className="flex items-center justify-center">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                           Sending...

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -9,8 +10,8 @@ const Login = () => {
     password: ''
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, loading, error } = useAuth();
   const { theme } = useTheme();
   const { showSuccess, showError } = useToast();
 
@@ -52,50 +53,28 @@ const Login = () => {
     
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
     try {
-      // In a real app, you would make an API call to login
-      // const response = await fetch('http://localhost:8000/auth/login', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     email: formData.email,
-      //     password: formData.password
-      //   })
-      // });
-      // 
-      // const data = await response.json();
-      // 
-      // if (response.ok) {
-      //   // Store tokens, redirect, etc.
-      //   showSuccess('Login successful!');
-      //   navigate('/');
-      // } else {
-      //   throw new Error(data.detail || 'Login failed');
-      // }
+      const result = await login(formData.email, formData.password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock login success - in a real app, you would handle actual authentication
-      console.log('Login attempt with:', formData);
-      
-      // Show success toast
-      showSuccess('Login successful!');
-      
-      // Redirect to home page after successful login
-      navigate('/');
+      if (result.success) {
+        // Show success toast
+        showSuccess('Login successful!');
+        
+        // Redirect to home page after successful login
+        navigate('/');
+      } else {
+        const errorMessage = result.error || 'Login failed';
+        setErrors({
+          general: errorMessage
+        });
+        showError(errorMessage);
+      }
     } catch (error) {
       const errorMessage = error.message || 'Login failed. Please check your credentials and try again.';
       setErrors({
         general: errorMessage
       });
       showError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -187,10 +166,10 @@ const Login = () => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                     Signing in...
