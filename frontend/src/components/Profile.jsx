@@ -1,19 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Profile = () => {
   const { theme } = useTheme();
+  const { user, isAuthenticated, fetchUserData, loading, debouncedFetchUserData } = useAuth();
+  
+  useEffect(() => {
+    if (isAuthenticated && (!user || !user.id)) {
+      debouncedFetchUserData();
+    }
+  }, [isAuthenticated, user, debouncedFetchUserData]);
   const [activeTab, setActiveTab] = useState('profile');
   const [profileData, setProfileData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    height: '175',
-    weight: '70',
-    age: '30',
-    gender: 'male',
+    name: '',
+    email: '',
+    height: '',
+    weight: '',
+    age: '',
+    gender: '',
     activityLevel: 'moderate',
     goal: 'weight-loss'
   });
+
+  // This effect is now handled above with debounced function
+
+  useEffect(() => {
+    if (user) {
+      setProfileData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     setProfileData({
@@ -62,11 +82,11 @@ const Profile = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-6">
                   <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    JD
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white dark:text-white">John Doe</h3>
-                    <p className="text-gray-400 dark:text-gray-400">john.doe@example.com</p>
+                    <h3 className="text-xl font-semibold text-white dark:text-white">{user?.name || profileData.name}</h3>
+                    <p className="text-gray-400 dark:text-gray-400">{user?.email || profileData.email}</p>
                     <button className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors duration-300">
                       Change Photo
                     </button>
@@ -83,6 +103,7 @@ const Profile = () => {
                       name="name"
                       value={profileData.name}
                       onChange={handleInputChange}
+                      placeholder="Enter your name"
                       className="w-full px-4 py-3 rounded-lg border border-gray-600 bg-white/5 dark:bg-gray-700/50 text-white dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
                   </div>
@@ -96,6 +117,7 @@ const Profile = () => {
                       name="email"
                       value={profileData.email}
                       onChange={handleInputChange}
+                      placeholder="Enter your email"
                       className="w-full px-4 py-3 rounded-lg border border-gray-600 bg-white/5 dark:bg-gray-700/50 text-white dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                     />
                   </div>

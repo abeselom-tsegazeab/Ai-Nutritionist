@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Settings = () => {
   const { theme } = useTheme();
+  const { user, isAuthenticated, fetchUserData, debouncedFetchUserData } = useAuth();
+  
+  useEffect(() => {
+    if (isAuthenticated && (!user || !user.id)) {
+      debouncedFetchUserData();
+    }
+  }, [isAuthenticated, user, debouncedFetchUserData]);
   const [activeTab, setActiveTab] = useState('account');
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -10,6 +18,16 @@ const Settings = () => {
     darkMode: theme === 'dark',
     privacyMode: false
   });
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user || !user.id) {
+        await fetchUserData();
+      }
+    };
+    
+    loadUserData();
+  }, [user, fetchUserData]);
 
   const handleSettingChange = (setting) => {
     setSettings(prev => ({
@@ -66,8 +84,9 @@ const Settings = () => {
                       </label>
                       <input
                         type="text"
-                        defaultValue="John Doe"
+                        defaultValue={user?.name || ""}
                         className="w-full px-4 py-3 rounded-lg border border-gray-600 bg-white/5 dark:bg-gray-700/50 text-white dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="Enter your name"
                       />
                     </div>
                     <div>
@@ -76,8 +95,9 @@ const Settings = () => {
                       </label>
                       <input
                         type="email"
-                        defaultValue="john.doe@example.com"
+                        defaultValue={user?.email || ""}
                         className="w-full px-4 py-3 rounded-lg border border-gray-600 bg-white/5 dark:bg-gray-700/50 text-white dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="Enter your email"
                       />
                     </div>
                   </div>
@@ -87,7 +107,7 @@ const Settings = () => {
                   <h3 className="text-lg font-medium text-white dark:text-white mb-4">Profile Picture</h3>
                   <div className="flex items-center space-x-6">
                     <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                      JD
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                     <div>
                       <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300">

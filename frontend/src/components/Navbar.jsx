@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, isAuthenticated, loading, checkAuthStatus, logout } = useAuth();
+  const { user, isAuthenticated, loading, checkAuthStatus, logout, fetchUserData, safeCheckAuthStatus, debouncedFetchUserData } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -23,9 +23,20 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    // Check authentication status on component mount
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    // Check authentication status on component mount and fetch user data if needed
+    const checkAuth = async () => {
+      await safeCheckAuthStatus();
+    };
+    
+    checkAuth();
+  }, [safeCheckAuthStatus]);
+
+  // Additional effect to refresh user data if needed
+  useEffect(() => {
+    if (isAuthenticated && (!user || !user.id)) {
+      debouncedFetchUserData();
+    }
+  }, [isAuthenticated, user, debouncedFetchUserData]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
