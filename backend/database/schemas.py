@@ -22,14 +22,13 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     is_verified: bool
-    email_verified: bool
     tfa_enabled: bool
     tfa_verified: bool
     created_at: datetime
     last_login: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ----------- MEAL PLAN SCHEMAS -----------

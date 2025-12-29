@@ -101,15 +101,97 @@ class EmailService:
         subject = "Verify Your Email Address - AI Nutritionist"
         html_content = f"""
         <html>
+            <head>
+                <style>
+                    @keyframes fadeIn {{
+                        from {{ opacity: 0; transform: translateY(-10px); }}
+                        to {{ opacity: 1; transform: translateY(0); }}
+                    }}
+                    @keyframes pulse {{
+                        0% {{ transform: scale(1); }}
+                        50% {{ transform: scale(1.05); }}
+                        100% {{ transform: scale(1); }}
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 30px;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+                        border-radius: 12px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    }}
+                    .header {{
+                        text-align: center;
+                        padding-bottom: 20px;
+                        border-bottom: 2px solid #4F46E5;
+                        margin-bottom: 25px;
+                    }}
+                    .logo {{
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #4F46E5;
+                        margin-bottom: 10px;
+                    }}
+                    .content {{
+                        background: white;
+                        padding: 30px;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+                    }}
+                    .otp-container {{
+                        background: linear-gradient(135deg, #4F46E5 0%, #7c3aed 100%);
+                        padding: 25px;
+                        border-radius: 12px;
+                        text-align: center;
+                        margin: 25px 0;
+                        color: white;
+                        animation: fadeIn 0.5s ease-out, pulse 2s infinite;
+                    }}
+                    .otp-code {{
+                        font-size: 36px;
+                        font-weight: bold;
+                        letter-spacing: 8px;
+                        text-align: center;
+                        margin: 15px 0;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    }}
+                    .footer {{
+                        text-align: center;
+                        margin-top: 25px;
+                        padding-top: 20px;
+                        border-top: 1px solid #eaeaea;
+                        color: #6b7280;
+                        font-size: 14px;
+                    }}
+                </style>
+            </head>
             <body>
-                <h2>Welcome to AI Nutritionist!</h2>
-                <p>Your verification code is:</p>
-                <div style="font-size: 24px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; margin: 20px 0;">
-                    {verification_token}
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">AI Nutritionist</div>
+                        <h2 style="margin: 0; color: #1f2937; animation: fadeIn 0.5s ease-out;">Welcome aboard!</h2>
+                    </div>
+                    <div class="content">
+                        <h3 style="color: #4F46E5; margin-top: 0; animation: fadeIn 0.5s 0.1s ease-out both;">Verify Your Email Address</h3>
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.2s ease-out both;">Thank you for joining AI Nutritionist! Your verification code is:</p>
+                        
+                        <div class="otp-container">
+                            <p style="margin: 0; font-size: 18px; opacity: 0.9;">Your Verification Code</p>
+                            <div class="otp-code" style="animation: fadeIn 0.5s 0.3s ease-out both;">
+                                {verification_token}
+                            </div>
+                            <p style="margin: 0; font-size: 14px; opacity: 0.8;">Valid for 24 hours</p>
+                        </div>
+                        
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.4s ease-out both;">Please enter this code in the app to verify your email address and complete your registration.</p>
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.5s ease-out both;">If you didn't create an account, please ignore this email.</p>
+                    </div>
+                    <div class="footer">
+                        <p>© 2025 AI Nutritionist. All rights reserved.</p>
+                        <p>This is an automated message, please do not reply.</p>
+                    </div>
                 </div>
-                <p>Please enter this code in the app to verify your email address.</p>
-                <p>This code will expire in 24 hours.</p>
-                <p>If you didn't create an account, please ignore this email.</p>
             </body>
         </html>
         """
@@ -134,16 +216,97 @@ class EmailService:
         subject = "Password Reset Request - AI Nutritionist"
         html_content = f"""
         <html>
+            <head>
+                <style>
+                    @keyframes fadeIn {{
+                        from {{ opacity: 0; transform: translateY(-10px); }}
+                        to {{ opacity: 1; transform: translateY(0); }}
+                    }}
+                    @keyframes pulse {{
+                        0% {{ transform: scale(1); }}
+                        50% {{ transform: scale(1.05); }}
+                        100% {{ transform: scale(1); }}
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 30px;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+                        border-radius: 12px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    }}
+                    .header {{
+                        text-align: center;
+                        padding-bottom: 20px;
+                        border-bottom: 2px solid #4F46E5;
+                        margin-bottom: 25px;
+                    }}
+                    .logo {{
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #4F46E5;
+                        margin-bottom: 10px;
+                    }}
+                    .content {{
+                        background: white;
+                        padding: 30px;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+                    }}
+                    .otp-container {{
+                        background: linear-gradient(135deg, #4F46E5 0%, #7c3aed 100%);
+                        padding: 25px;
+                        border-radius: 12px;
+                        text-align: center;
+                        margin: 25px 0;
+                        color: white;
+                        animation: fadeIn 0.5s ease-out, pulse 2s infinite;
+                    }}
+                    .otp-code {{
+                        font-size: 36px;
+                        font-weight: bold;
+                        letter-spacing: 8px;
+                        text-align: center;
+                        margin: 15px 0;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    }}
+                    .footer {{
+                        text-align: center;
+                        margin-top: 25px;
+                        padding-top: 20px;
+                        border-top: 1px solid #eaeaea;
+                        color: #6b7280;
+                        font-size: 14px;
+                    }}
+                </style>
+            </head>
             <body>
-                <h2>Password Reset Request</h2>
-                <p>You requested a password reset for your AI Nutritionist account.</p>
-                <p>Your reset code is:</p>
-                <div style="font-size: 24px; font-weight: bold; color: #4F46E5; letter-spacing: 4px; margin: 20px 0;">
-                    {reset_token}
+                <div class="container">
+                    <div class="header">
+                        <div class="logo">AI Nutritionist</div>
+                        <h2 style="margin: 0; color: #1f2937; animation: fadeIn 0.5s ease-out;">Password Reset Request</h2>
+                    </div>
+                    <div class="content">
+                        <h3 style="color: #4F46E5; margin-top: 0; animation: fadeIn 0.5s 0.1s ease-out both;">Reset Your Password</h3>
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.2s ease-out both;">You requested a password reset for your AI Nutritionist account. Your reset code is:</p>
+                        
+                        <div class="otp-container">
+                            <p style="margin: 0; font-size: 18px; opacity: 0.9;">Your Reset Code</p>
+                            <div class="otp-code" style="animation: fadeIn 0.5s 0.3s ease-out both;">
+                                {reset_token}
+                            </div>
+                            <p style="margin: 0; font-size: 14px; opacity: 0.8;">Valid for 24 hours</p>
+                        </div>
+                        
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.4s ease-out both;">Please enter this code in the app to reset your password.</p>
+                        <p style="color: #4b5563; animation: fadeIn 0.5s 0.5s ease-out both;">If you didn't request a password reset, please ignore this email.</p>
+                    </div>
+                    <div class="footer">
+                        <p>© 2025 AI Nutritionist. All rights reserved.</p>
+                        <p>This is an automated message, please do not reply.</p>
+                    </div>
                 </div>
-                <p>Please enter this code in the app to reset your password.</p>
-                <p>This code will expire in 24 hours.</p>
-                <p>If you didn't request a password reset, please ignore this email.</p>
             </body>
         </html>
         """

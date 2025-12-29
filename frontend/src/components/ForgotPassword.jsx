@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
+import { forgotPassword } from '../services/authService';
 
 const ForgotPassword = () => {
   const [formData, setFormData] = useState({
@@ -47,24 +48,14 @@ const ForgotPassword = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch('http://localhost:8000/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email
-        })
-      });
+      const result = await forgotPassword(formData.email);
       
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (result.success) {
         // Show success message
         setIsSubmitted(true);
         toast.success('Password reset instructions sent to your email!');
       } else {
-        const errorMessage = data.detail || 'Failed to send password reset email. Please try again.';
+        const errorMessage = result.error || 'Failed to send password reset email. Please try again.';
         setErrors({
           general: errorMessage
         });

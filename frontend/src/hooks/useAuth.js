@@ -1,5 +1,16 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser, clearUser, setLoading, setError } from '../store/userSlice';
+import {
+  login as loginService,
+  logout as logoutService,
+  register as registerService,
+  checkAuthStatus as checkAuthStatusService,
+  getCurrentUser,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword
+} from '../services/authService';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -8,33 +19,19 @@ export const useAuth = () => {
   const login = async (email, password) => {
     dispatch(setLoading(true));
     try {
-      const response = await fetch('http://localhost:8000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const result = await loginService(email, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store tokens in localStorage
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('refreshToken', data.refresh_token);
-        
+      if (result.success) {
         // Dispatch user data to Redux store
         dispatch(setUser({
-          id: data.user_id,
-          email: data.email,
-          name: data.name,
+          id: result.user.user_id,
+          email: result.user.email,
+          name: result.user.name,
         }));
-
-        return { success: true, user: data };
+        return { success: true, user: result.user };
       } else {
-        const error = data.detail || 'Login failed';
-        dispatch(setError(error));
-        return { success: false, error };
+        dispatch(setError(result.error));
+        return { success: false, error: result.error };
       }
     } catch (error) {
       dispatch(setError(error.message || 'An error occurred during login'));
@@ -45,44 +42,30 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    // Remove tokens from localStorage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    
-    // Clear user data from Redux store
+    logoutService();
     dispatch(clearUser());
   };
 
   const register = async (name, email, password) => {
     dispatch(setLoading(true));
     try {
-      const response = await fetch('http://localhost:8000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const result = await registerService(name, email, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store tokens in localStorage
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('refreshToken', data.refresh_token);
+      if (result.success) {
+        // Don't store tokens immediately after registration
+        // User needs to verify email first
         
-        // Dispatch user data to Redux store
+        // Dispatch user data to Redux store (but user is not yet authenticated)
         dispatch(setUser({
-          id: data.user_id,
-          email: data.email,
-          name: data.name,
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name,
         }));
 
-        return { success: true, user: data };
+        return { success: true, user: result.user };
       } else {
-        const error = data.detail || 'Registration failed';
-        dispatch(setError(error));
-        return { success: false, error };
+        dispatch(setError(result.error));
+        return { success: false, error: result.error };
       }
     } catch (error) {
       dispatch(setError(error.message || 'An error occurred during registration'));
@@ -93,13 +76,7 @@ export const useAuth = () => {
   };
 
   const checkAuthStatus = () => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // In a real implementation, you might want to verify the token
-      // For now, we'll just return whether a token exists
-      return !!token;
-    }
-    return false;
+    return checkAuthStatusService();
   };
 
   return {

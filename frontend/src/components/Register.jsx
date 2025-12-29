@@ -71,10 +71,10 @@ const Register = () => {
       
       if (result.success) {
         // Show success toast
-        toast.success('Registration successful!');
+        toast.success('Registration successful! Please check your email for a verification code to complete your registration.');
         
-        // Redirect to home page after successful registration
-        navigate('/');
+        // Redirect to verify email page after successful registration
+        navigate('/verify-email');
       } else {
         const errorMessage = result.error || 'Registration failed';
         setErrors({

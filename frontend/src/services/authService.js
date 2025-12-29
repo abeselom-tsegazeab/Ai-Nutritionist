@@ -1,103 +1,225 @@
-// authService.js - Authentication service to handle API calls and Redux dispatches
-
-import { setUser, clearUser, setLoading, setError } from '../store/userSlice';
-import { useDispatch } from 'react-redux';
+// authService.js - Authentication service to handle API calls
 
 // Function to handle login
-export const useAuth = () => {
-  const dispatch = useDispatch();
+export const login = async (email, password) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-  const login = async (email, password) => {
-    dispatch(setLoading(true));
-    try {
-      const response = await fetch('http://localhost:8000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const data = await response.json();
 
-      const data = await response.json();
+    if (response.ok) {
+      // Store tokens in localStorage
+      localStorage.setItem('accessToken', data.access_token);
+      localStorage.setItem('refreshToken', data.refresh_token);
 
-      if (response.ok) {
-        // Store tokens in localStorage
-        localStorage.setItem('accessToken', data.access_token);
-        localStorage.setItem('refreshToken', data.refresh_token);
-        
-        // Dispatch user data to Redux store
-        dispatch(setUser({
-          id: data.user_id,
-          email: data.email,
-          name: data.name,
-          // Add other user data as needed
-        }));
-
-        return { success: true, user: data };
-      } else {
-        const error = data.detail || 'Login failed';
-        dispatch(setError(error));
-        return { success: false, error };
+      return { success: true, user: data };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Login failed';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
       }
-    } catch (error) {
-      dispatch(setError(error.message || 'An error occurred during login'));
-      return { success: false, error: error.message || 'An error occurred during login' };
-    } finally {
-      dispatch(setLoading(false));
+      return { success: false, error: errorMessage };
     }
-  };
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during login' };
+  }
+};
 
-  const logout = () => {
-    // Remove tokens from localStorage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    
-    // Clear user data from Redux store
-    dispatch(clearUser());
-  };
+// Function to handle logout
+export const logout = () => {
+  // Remove tokens from localStorage
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+};
 
-  const register = async (name, email, password) => {
-    dispatch(setLoading(true));
-    try {
-      const response = await fetch('http://localhost:8000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+// Function to handle registration
+export const register = async (name, email, password) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        return { success: true, user: data };
-      } else {
-        const error = data.detail || 'Registration failed';
-        dispatch(setError(error));
-        return { success: false, error };
+    if (response.ok) {
+      return { success: true, user: data };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Registration failed';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
       }
-    } catch (error) {
-      dispatch(setError(error.message || 'An error occurred during registration'));
-      return { success: false, error: error.message || 'An error occurred during registration' };
-    } finally {
-      dispatch(setLoading(false));
+      return { success: false, error: errorMessage };
     }
-  };
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during registration' };
+  }
+};
 
-  const checkAuthStatus = () => {
+// Function to verify email
+export const verifyEmail = async (verificationCode) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/verify-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ verification_code: verificationCode }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, message: data.message };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Verification failed';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during verification' };
+  }
+};
+
+// Function to resend verification code
+export const resendVerification = async (email) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/resend-verification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, message: data.message };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Failed to resend verification';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred while resending verification' };
+  }
+};
+
+// Function to request password reset
+export const forgotPassword = async (email) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, message: data.message };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Failed to send password reset email';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during password reset request' };
+  }
+};
+
+// Function to reset password
+export const resetPassword = async (resetCode, newPassword) => {
+  try {
+    const response = await fetch('http://localhost:8000/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reset_code: resetCode, new_password: newPassword }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, message: data.message };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Failed to reset password';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during password reset' };
+  }
+};
+
+// Function to check authentication status
+export const checkAuthStatus = () => {
+  const token = localStorage.getItem('accessToken');
+  return !!token;
+};
+
+// Function to get current user
+export const getCurrentUser = async () => {
+  try {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      // In a real implementation, you might want to verify the token
-      // For now, we'll just return whether a token exists
-      return !!token;
+    if (!token) {
+      return { success: false, error: 'No token found' };
     }
-    return false;
-  };
 
-  return {
-    login,
-    logout,
-    register,
-    checkAuthStatus,
-  };
+    const response = await fetch('http://localhost:8000/auth/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, user: data };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Failed to get user';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred while fetching user data' };
+  }
 };

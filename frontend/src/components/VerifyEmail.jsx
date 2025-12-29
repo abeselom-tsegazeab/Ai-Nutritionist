@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { verifyEmail, resendVerification } from '../services/authService';
 
 const VerifyEmail = () => {
   const [verificationCode, setVerificationCode] = useState('');
@@ -36,24 +37,14 @@ const VerifyEmail = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          verification_code: verificationCode
-        })
-      });
+      const result = await verifyEmail(verificationCode);
       
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (result.success) {
         // Show success message
         setIsVerified(true);
       } else {
         setErrors({
-          general: data.detail || 'Invalid verification code. Please try again.'
+          general: result.error || 'Invalid verification code. Please try again.'
         });
       }
     } catch (error) {
@@ -73,23 +64,13 @@ const VerifyEmail = () => {
       const email = prompt('Please enter your email address to resend the verification code:');
       if (!email) return;
       
-      const response = await fetch('http://localhost:8000/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email
-        })
-      });
+      const result = await resendVerification(email);
       
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (result.success) {
         console.log('Verification code resent successfully');
       } else {
         setErrors({
-          general: data.detail || 'Failed to resend verification code. Please try again.'
+          general: result.error || 'Failed to resend verification code. Please try again.'
         });
       }
     } catch (error) {

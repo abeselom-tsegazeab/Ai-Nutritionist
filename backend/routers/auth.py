@@ -209,13 +209,40 @@ def register_user(request: Request, user: UserCreate, db: Session = Depends(get_
 
 @router.post("/login")
 @limiter.limit("5/minute")
-def login_user(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
+async def login_user(request: Request, db: Session = Depends(get_db)):
+    # Handle both form data and JSON data
+    try:
+        content_type = request.headers.get("content-type", "")
+        
+        if "application/json" in content_type:
+            # Handle JSON request
+            body = await request.json()
+            email = body.get("email")
+            password = body.get("password")
+        else:
+            # Handle form data request (for OAuth2PasswordRequestForm compatibility)
+            form = await request.form()
+            email = form.get("username")  # OAuth2PasswordRequestForm uses 'username' field
+            password = form.get("password")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request format"
+        )
+    
+    # Validate that both email and password are provided
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required"
+        )
+    
+    user = authenticate_user(db, email, password)
     if not user:
         # Log failed login attempt
         ip_address = request.client.host
         user_agent = request.headers.get("user-agent", "Unknown")
-        log_failed_login(form_data.username, ip_address, user_agent)
+        log_failed_login(email, ip_address, user_agent)
         
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -329,8 +356,32 @@ def logout_user(current_user: User = Depends(get_current_user), db: Session = De
 
 
 @router.post("/verify-email")
-def verify_email(verification_code: str, db: Session = Depends(get_db)):
+async def verify_email(request: Request, db: Session = Depends(get_db)):
     """Verify user's email address using the OTP verification code"""
+    # Handle both form data and JSON data
+    try:
+        content_type = request.headers.get("content-type", "")
+        
+        if "application/json" in content_type:
+            # Handle JSON request
+            body = await request.json()
+            verification_code = body.get("verification_code")
+        else:
+            # Handle form data request
+            form = await request.form()
+            verification_code = form.get("verification_code")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request format"
+        )
+    
+    if not verification_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code is required"
+        )
+    
     # Find user with matching verification code
     user = db.query(User).filter(User.email_verification_token == verification_code).first()
     

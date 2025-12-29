@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // This would come from your auth context
+  const { user, isAuthenticated, loading, checkAuthStatus, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -21,14 +22,18 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Check authentication status on component mount
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Mock function to handle logout
+  // Function to handle logout
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    // Actual logout logic would go here
+    logout();
   };
 
   return (
@@ -93,17 +98,17 @@ const Navbar = () => {
               )}
             </button>
             
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <div className="relative group">
                 <button className="flex items-center space-x-2 text-white dark:text-gray-200 hover:text-blue-300 transition-colors duration-300">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold overflow-hidden">
                     <img 
-                      src="https://ui-avatars.com/api/?name=John+Doe&background=random" 
+                      src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`} 
                       alt="Profile" 
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="text-sm font-medium">John</span>
+                  <span className="text-sm font-medium">{user?.name || 'User'}</span>
                   <svg 
                     className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" 
                     fill="none" 
@@ -138,6 +143,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex space-x-3">
+            
                 <Link 
                   to="/login" 
                   className="text-white dark:text-gray-200 hover:text-blue-300 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 transform border border-white/30 dark:border-gray-600 hover:border-white/50 dark:hover:border-gray-500"
@@ -225,17 +231,17 @@ const Navbar = () => {
             Contact
           </Link>
           
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className="pt-4 pb-2 border-t border-white/20 dark:border-gray-700">
               <div className="flex items-center px-3 py-2">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold mr-3">
                   <img 
-                    src="https://ui-avatars.com/api/?name=John+Doe&background=random" 
+                    src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`} 
                     alt="Profile" 
                     className="w-full h-full object-cover rounded-full"
                   />
                 </div>
-                <span className="text-white dark:text-gray-200 font-medium">John Doe</span>
+                <span className="text-white dark:text-gray-200 font-medium">{user?.name || 'User'}</span>
               </div>
               <Link 
                 to="/profile" 

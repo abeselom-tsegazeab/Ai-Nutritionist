@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -19,8 +20,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     EMAIL_USE_TLS: bool = True
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")
 
 
 settings = Settings()

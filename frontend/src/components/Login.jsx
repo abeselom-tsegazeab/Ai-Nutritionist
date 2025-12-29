@@ -63,11 +63,19 @@ const Login = () => {
         // Redirect to home page after successful login
         navigate('/');
       } else {
-        const errorMessage = result.error || 'Login failed';
-        setErrors({
-          general: errorMessage
-        });
-        showError(errorMessage);
+        // Check if the error is related to unverified email
+        if (result.error && result.error.includes('verified')) {
+          showSuccess('Please verify your email before logging in. Redirecting to verification page...');
+          setTimeout(() => {
+            navigate('/verify-email');
+          }, 2000);
+        } else {
+          const errorMessage = result.error || 'Login failed';
+          setErrors({
+            general: errorMessage
+          });
+          showError(errorMessage);
+        }
       }
     } catch (error) {
       const errorMessage = error.message || 'Login failed. Please check your credentials and try again.';

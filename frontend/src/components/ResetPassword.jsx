@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { resetPassword } from '../services/authService';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -43,7 +44,7 @@ const ResetPassword = () => {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
       newErrors.password = 'Password must contain uppercase, lowercase, number, and special character';
     }
 
@@ -65,25 +66,14 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8000/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reset_code: formData.resetCode,
-          new_password: formData.password
-        })
-      });
+      const result = await resetPassword(formData.resetCode, formData.password);
       
-      const data = await response.json();
-      
-      if (response.ok) {
+      if (result.success) {
         // Show success message
         setIsSubmitted(true);
       } else {
         setErrors({
-          general: data.detail || 'Failed to reset password. Please try again.'
+          general: result.error || 'Failed to reset password. Please try again.'
         });
       }
     } catch (error) {
