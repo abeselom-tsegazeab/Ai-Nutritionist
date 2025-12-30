@@ -232,3 +232,17 @@ html {
   animation-delay: 2s;
 }
 
+/* Additional custom animations for Hero component */
+@keyframes wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-wave {
+  animation: wave 8s linear infinite;
+}
+
