@@ -185,10 +185,71 @@ export const resetPassword = async (resetCode, newPassword) => {
   }
 };
 
+// Function to refresh the access token using the refresh token
+export const refreshToken = async () => {
+  try {
+    const refreshToken = localStorage.getItem('refreshToken');
+    
+    if (!refreshToken) {
+      return { success: false, error: 'No refresh token found' };
+    }
+    
+    const response = await fetch('http://localhost:8000/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Store the new access token
+      localStorage.setItem('accessToken', data.access_token);
+      return { success: true, access_token: data.access_token };
+    } else {
+      // Refresh failed, clear tokens
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      return { success: false, error: data.detail || 'Token refresh failed' };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred during token refresh' };
+  }
+};
+
 // Function to check authentication status
-export const checkAuthStatus = () => {
-  const token = localStorage.getItem('accessToken');
-  return !!token;
+export const checkAuthStatus = async () => {
+  let token = localStorage.getItem('accessToken');
+  
+  // If token exists, try to use it first
+  if (token) {
+    try {
+      // Try to verify the token is still valid by making a minimal request
+      // We can use the /auth/me endpoint as a lightweight check
+      const response = await fetch('http://localhost:8000/auth/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        return true;
+      } else {
+        // Token is invalid, try to refresh
+        const refreshResult = await refreshToken();
+        return refreshResult.success;
+      }
+    } catch (error) {
+      // If verification request fails, try to refresh the token
+      const refreshResult = await refreshToken();
+      return refreshResult.success;
+    }
+  }
+  
+  return false;
 };
 
 // Function to get current user
@@ -217,7 +278,7 @@ export const getCurrentUser = async () => {
         // Extract the first error message from FastAPI validation errors
         errorMessage = data.detail[0]?.msg || 'Validation error occurred';
       }
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, status: response.status };
     }
   } catch (error) {
     return { success: false, error: error.message || 'An error occurred while fetching user data' };

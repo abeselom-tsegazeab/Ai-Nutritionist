@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, isAuthenticated, loading, checkAuthStatus, logout, fetchUserData, safeCheckAuthStatus, debouncedFetchUserData } = useAuth();
+  const { user, isAuthenticated, loading, error, checkAuthStatus, logout, fetchUserData, safeCheckAuthStatus, debouncedFetchUserData, quickCheckAuthStatus, resetTokenValidity } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -25,11 +25,40 @@ const Navbar = () => {
   useEffect(() => {
     // Check authentication status on component mount and fetch user data if needed
     const checkAuth = async () => {
-      await safeCheckAuthStatus();
+      // First do a quick check without API calls
+      if (quickCheckAuthStatus()) {
+        // If token exists, do a full check
+        await safeCheckAuthStatus();
+      }
     };
     
     checkAuth();
-  }, [safeCheckAuthStatus]);
+  }, [safeCheckAuthStatus, quickCheckAuthStatus]);
+  
+  // Effect to handle logout when error indicates invalid token
+  useEffect(() => {
+    if (error && (error.includes('401') || error.includes('Unauthorized'))) {
+      logout();
+    }
+  }, [error, logout]);
+  
+  // Effect to reset token validity when user navigates to login/register pages
+  useEffect(() => {
+    const handleRouteChange = () => {
+      // Reset the known invalid token flag when navigating to auth pages
+      if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+        resetTokenValidity();
+      }
+    };
+    
+    // Listen for popstate events (browser navigation)
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, [resetTokenValidity]);
 
   // Additional effect to refresh user data if needed
   useEffect(() => {

@@ -4,13 +4,21 @@ import { useAuth } from '../hooks/useAuth';
 
 const Settings = () => {
   const { theme } = useTheme();
-  const { user, isAuthenticated, fetchUserData, debouncedFetchUserData } = useAuth();
+  const { user, isAuthenticated, fetchUserData, debouncedFetchUserData, resetTokenValidity } = useAuth();
   
   useEffect(() => {
     if (isAuthenticated && (!user || !user.id)) {
-      debouncedFetchUserData();
+      // Only fetch user data if we have a token
+      if (localStorage.getItem('accessToken')) {
+        debouncedFetchUserData();
+      }
     }
   }, [isAuthenticated, user, debouncedFetchUserData]);
+  
+  // Effect to reset token validity when component mounts
+  useEffect(() => {
+    resetTokenValidity();
+  }, [resetTokenValidity]);
   const [activeTab, setActiveTab] = useState('account');
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -21,7 +29,7 @@ const Settings = () => {
 
   useEffect(() => {
     const loadUserData = async () => {
-      if (!user || !user.id) {
+      if ((!user || !user.id) && localStorage.getItem('accessToken')) {
         await fetchUserData();
       }
     };

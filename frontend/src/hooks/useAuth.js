@@ -23,7 +23,24 @@ export const useAuth = () => {
   // Track if a fetch is currently in progress to prevent duplicate calls
   let fetchInProgress = false;
   
+  // Track if we know the token is invalid to prevent unnecessary API calls
+  let knownInvalidToken = false;
+  
   const fetchUserData = async () => {
+    // Check if token is valid before attempting to fetch user data
+    const isTokenValid = await checkAuthStatusService();
+    if (!isTokenValid) {
+      // Token is not valid, no point in trying to fetch user data
+      dispatch(clearUser());
+      dispatch(setError('Authentication token is not valid'));
+      return { success: false, error: 'Authentication token is not valid' };
+    }
+    
+    // If we already have user data with an ID, no need to fetch again
+    if (user && user.id) {
+      return { success: true, user: user };
+    }
+    
     // Prevent duplicate requests if one is already in progress
     if (fetchInProgress) {
       // Wait a bit and return, assuming the ongoing request will update the state
@@ -42,13 +59,26 @@ export const useAuth = () => {
           email: result.user.email,
           name: result.user.name,
         }));
+        // Reset the knownInvalidToken flag since we successfully got user data
+        knownInvalidToken = false;
         return { success: true, user: result.user };
       } else {
         dispatch(setError(result.error));
+        // If the fetch failed due to auth error, clear the user
+        if (result.error.includes('401') || (result.status && result.status === 401) || result.error.includes('403') || (result.status && result.status === 403) || result.error.includes('Unauthorized')) {
+          dispatch(clearUser());
+          knownInvalidToken = true;
+        }
         return { success: false, error: result.error };
       }
     } catch (error) {
       console.error('Error in fetchUserData:', error);
+      // Check if it's an authentication error
+      if (error.message.includes('401') || (error.status && error.status === 401) || error.message.includes('403') || (error.status && error.status === 403) || error.message.includes('Unauthorized')) {
+        // Token is invalid, clear user state
+        dispatch(clearUser());
+        knownInvalidToken = true;
+      }
       dispatch(setError(error.message || 'Error fetching user data'));
       return { success: false, error: error.message || 'Error fetching user data' };
     } finally {
@@ -63,7 +93,9 @@ export const useAuth = () => {
     return function() {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        if (!fetchInProgress) {
+        // Only fetch if we don't know the token is invalid and don't already have user data
+        if (!fetchInProgress && !knownInvalidToken && (!user || !user.id)) {
+          // Use async/await properly in the debounced function
           fetchUserData();
         }
       }, 300); // 300ms delay to prevent excessive calls
@@ -84,6 +116,8 @@ export const useAuth = () => {
             email: userDataResult.user.email,
             name: userDataResult.user.name,
           }));
+          // Reset the knownInvalidToken flag since login was successful
+          knownInvalidToken = false;
         }
         return { success: true, user: userDataResult.user };
       } else {
@@ -101,6 +135,8 @@ export const useAuth = () => {
   const logout = () => {
     logoutService();
     dispatch(clearUser());
+    // Reset the knownInvalidToken flag on logout
+    knownInvalidToken = false;
   };
 
   const register = async (name, email, password) => {
@@ -145,43 +181,55 @@ export const useAuth = () => {
     
     try {
       authCheckInProgress = true;
-      const isTokenValid = checkAuthStatusService();
+      const isTokenValid = await checkAuthStatusService();
       
       if (isTokenValid) {
+        // Reset the knownInvalidToken flag since token is valid
+        knownInvalidToken = false;
+        
         // If token exists, fetch user data to ensure it's up-to-date
         // This handles cases where user data might be stale or missing
-        try {
-          dispatch(setLoading(true));
-          const result = await getCurrentUser();
-          
-          if (result.success) {
-            dispatch(setUser({
-              id: result.user.id,
-              email: result.user.email,
-              name: result.user.name,
-            }));
-            return true;
-          } else {
-            // Token exists but user fetch failed, clear the invalid state
-            dispatch(clearUser());
+        // But only fetch if we don't already have user data
+        if (!user || !user.id) {
+          try {
+            dispatch(setLoading(true));
+            const result = await getCurrentUser();
+            
+            if (result.success) {
+              dispatch(setUser({
+                id: result.user.id,
+                email: result.user.email,
+                name: result.user.name,
+              }));
+              return true;
+            } else {
+              // Token exists but user fetch failed, clear the invalid state
+              dispatch(clearUser());
+              return false;
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+            // Only clear user if it's a 401/403 error (invalid token), not for network errors
+            if (error.message.includes('401') || (error.status && error.status === 401) || error.message.includes('403') || (error.status && error.status === 403) || error.message.includes('Unauthorized')) {
+              dispatch(clearUser());
+              knownInvalidToken = true;
+            }
+            dispatch(setError(error.message || 'Error fetching user data'));
             return false;
+          } finally {
+            dispatch(setLoading(false));
           }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          // Only clear user if it's a 401/403 error (invalid token), not for network errors
-          if (error.message.includes('401') || error.message.includes('403')) {
-            dispatch(clearUser());
-          }
-          dispatch(setError(error.message || 'Error fetching user data'));
-          return false;
-        } finally {
-          dispatch(setLoading(false));
+        } else {
+          // We already have user data, so just return true
+          return true;
         }
       } else {
         // Token is not valid, ensure user state is cleared
         if (user || isAuthenticated) {
           dispatch(clearUser());
         }
+        // Mark that we know the token is invalid
+        knownInvalidToken = true;
       }
       
       return isTokenValid;
@@ -193,23 +241,39 @@ export const useAuth = () => {
   // Function to safely check auth without throwing errors
   const safeCheckAuthStatus = async () => {
     try {
-      return await checkAuthStatus();
+      const result = await checkAuthStatus();
+      // Reset the knownInvalidToken flag if auth check succeeds
+      if (result) {
+        knownInvalidToken = false;
+      }
+      return result;
     } catch (error) {
       console.error('Error in safeCheckAuthStatus:', error);
       return false;
     }
   };
-
-  // Function to check auth status without blocking
+  
+  // Function to check if user is authenticated without making API calls
   const quickCheckAuthStatus = () => {
-    return checkAuthStatusService();
+    // Just check if token exists in localStorage
+    const token = localStorage.getItem('accessToken');
+    return !!token;
+  };
+  
+  // Function to reset the knownInvalidToken flag
+  const resetTokenValidity = () => {
+    knownInvalidToken = false;
   };
 
+
+
   const refreshUserData = async () => {
-    if (isAuthenticated) {
+    // Only fetch user data if we're authenticated, don't know the token is invalid, 
+    // and we don't already have user data with an ID
+    if (isAuthenticated && !knownInvalidToken && (!user || !user.id)) {
       return await fetchUserData();
     }
-    return { success: false, error: 'User not authenticated' };
+    return { success: false, error: knownInvalidToken ? 'Known invalid token' : (user && user.id ? 'User data already loaded' : 'User not authenticated') };
   };
 
   return {
@@ -225,5 +289,6 @@ export const useAuth = () => {
     refreshUserData,
     safeCheckAuthStatus,
     quickCheckAuthStatus,
+    resetTokenValidity,
   };
 };
