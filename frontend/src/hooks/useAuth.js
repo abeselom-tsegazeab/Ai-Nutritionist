@@ -58,6 +58,7 @@ export const useAuth = () => {
           id: result.user.id,
           email: result.user.email,
           name: result.user.name,
+          role: result.user.role,
         }));
         // Reset the knownInvalidToken flag since we successfully got user data
         knownInvalidToken = false;
@@ -115,6 +116,7 @@ export const useAuth = () => {
             id: userDataResult.user.id,
             email: userDataResult.user.email,
             name: userDataResult.user.name,
+            role: userDataResult.user.role,
           }));
           // Reset the knownInvalidToken flag since login was successful
           knownInvalidToken = false;
@@ -153,6 +155,7 @@ export const useAuth = () => {
           id: result.user.id,
           email: result.user.email,
           name: result.user.name,
+          role: result.user.role,
         }));
 
         return { success: true, user: result.user };
@@ -200,6 +203,7 @@ export const useAuth = () => {
                 id: result.user.id,
                 email: result.user.email,
                 name: result.user.name,
+                role: result.user.role,
               }));
               return true;
             } else {

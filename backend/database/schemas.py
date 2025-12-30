@@ -20,6 +20,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    role: str
     is_active: bool
     is_verified: bool
     tfa_enabled: bool

@@ -20,6 +20,7 @@ from core.email_utils import EmailVerification
 from core.audit_logger import log_user_login, log_failed_login, log_user_registration, log_security_event
 import logging
 from core.tfa_manager import TwoFactorAuth
+from core.security import is_admin
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -183,6 +184,7 @@ def register_user(request: Request, user: UserCreate, db: Session = Depends(get_
         name=user.name,
         email=user.email,
         password_hash=hashed_password,
+        role="user",  # Default role is user
         is_active=True,
         is_verified=False,
         email_verification_token=verification_token,
@@ -573,3 +575,60 @@ def verify_tfa_login(token: str, email: str, db: Session = Depends(get_db)):
         )
     
     return {"message": "TFA verified successfully", "user_id": user.id}
+
+
+@router.get("/users", response_model=list[UserResponse])
+def get_all_users(
+    current_user: User = Depends(is_admin),
+    db: Session = Depends(get_db)
+):
+    """Get all users - admin only"""
+    users = db.query(User).all()
+    return users
+
+
+@router.put("/users/{user_id}/role")
+def update_user_role(
+    user_id: int,
+    role: str,
+    current_user: User = Depends(is_admin),
+    db: Session = Depends(get_db)
+):
+    """Update user role - admin only"""
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Validate role
+    if role not in ["user", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid role. Valid roles: user, admin"
+        )
+    
+    user.role = role
+    db.commit()
+    
+    return {"message": f"User role updated to {role}"}
+
+
+@router.get("/user/{user_id}", response_model=UserResponse)
+def get_user_by_id(
+    user_id: int,
+    current_user: User = Depends(is_admin),
+    db: Session = Depends(get_db)
+):
+    """Get user by ID - admin only"""
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return user

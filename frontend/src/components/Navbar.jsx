@@ -173,6 +173,14 @@ const Navbar = () => {
                   >
                     Settings
                   </Link>
+                  {user?.role === 'admin' && (
+                    <Link 
+                      to="/admin" 
+                      className="block px-4 py-2 text-sm text-white dark:text-gray-200 hover:bg-white/10 dark:hover:bg-gray-700 transition-colors duration-300"
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-white dark:text-gray-200 hover:bg-white/10 dark:hover:bg-gray-700 transition-colors duration-300"
@@ -297,6 +305,15 @@ const Navbar = () => {
               >
                 Settings
               </Link>
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className="block px-4 py-2 text-white dark:text-gray-200 hover:bg-white/10 dark:hover:bg-gray-700 rounded-md text-base font-medium transition-all duration-300"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin Panel
+                </Link>
+              )}
               <button 
                 onClick={() => {
                   handleLogout();

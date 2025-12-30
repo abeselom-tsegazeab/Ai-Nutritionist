@@ -12,6 +12,7 @@ import Settings from './components/Settings';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import VerifyEmail from './components/VerifyEmail';
+import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
 import './App.css';
 
@@ -46,6 +47,7 @@ function App() {
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/meal-planner" element={<MealPlanner />} />
               <Route path="/features" element={<Features />} />
+              <Route path="/admin" element={<AdminPanel />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
