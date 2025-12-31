@@ -21,6 +21,9 @@ from core.audit_logger import log_user_login, log_failed_login, log_user_registr
 import logging
 from core.tfa_manager import TwoFactorAuth
 from datetime import datetime, timedelta
+from fastapi import File, UploadFile
+import os
+from pathlib import Path
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -628,6 +631,84 @@ def verify_tfa_login(token: str, email: str, db: Session = Depends(get_db)):
         )
     
     return {"message": "TFA verified successfully", "user_id": user.id}
+
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload a file - authenticated users only"""
+    # Define allowed file types and size limits
+    allowed_extensions = {"jpg", "jpeg", "png", "gif", "pdf", "doc", "docx"}
+    max_file_size = 5 * 1024 * 1024  # 5MB limit
+    
+    # Check file extension
+    file_extension = Path(file.filename).suffix[1:].lower()
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
+        )
+    
+    # Check file size
+    file_content = await file.read()
+    if len(file_content) > max_file_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum size is 5MB."
+        )
+    
+    # Reset file pointer
+    await file.seek(0)
+    
+    # Create uploads directory if it doesn't exist
+    uploads_dir = Path("uploads")
+    uploads_dir.mkdir(exist_ok=True)
+    
+    # Create user-specific directory
+    user_dir = uploads_dir / f"user_{current_user.id}"
+    user_dir.mkdir(exist_ok=True)
+    
+    # Generate unique filename
+    import uuid
+    unique_filename = f"{uuid.uuid4()}_{file.filename}"
+    file_path = user_dir / unique_filename
+    
+    # Save the file
+    with open(file_path, "wb") as buffer:
+        buffer.write(file_content)
+    
+    # Optionally update user profile with file path
+    # For example, if it's an avatar image
+    if file_extension in {"jpg", "jpeg", "png", "gif"}:
+        current_user.profile_picture = str(file_path)
+        db.commit()
+    
+    return {
+        "filename": file.filename,
+        "file_path": str(file_path),
+        "file_size": len(file_content),
+        "message": "File uploaded successfully"
+    }
+
+
+@router.get("/profile-picture")
+def get_profile_picture(
+    current_user: User = Depends(get_current_user)
+):
+    """Get the user's profile picture path"""
+    if not current_user.profile_picture:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile picture not found"
+        )
+    
+    return {
+        "profile_picture": current_user.profile_picture,
+        "message": "Profile picture retrieved successfully"
+    }
 
 
 @router.get("/users", response_model=list[UserResponse])

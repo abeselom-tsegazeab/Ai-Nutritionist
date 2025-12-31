@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     is_verified: bool
     tfa_enabled: bool
     tfa_verified: bool
+    profile_picture: Optional[str] = None  # Path to user's profile picture
     created_at: datetime
     last_login: Optional[datetime]
 
@@ -58,7 +59,7 @@ class MealPlanResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ----------- MEAL HISTORY SCHEMAS -----------
@@ -70,9 +71,12 @@ class MealHistoryResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class MealPlanFullResponse(BaseModel):
     mealplan: MealPlanResponse
     history: List[MealHistoryResponse]
+
+    class Config:
+        from_attributes = True

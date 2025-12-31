@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from database.database import engine
 from database.models import Base
 from core.security import get_rate_limit_middleware
@@ -31,6 +32,12 @@ with engine.connect() as conn:
         # Add role column to users table
         conn.execute(text("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"))
         conn.commit()
+    
+    # Check if profile_picture column exists
+    if 'profile_picture' not in columns:
+        # Add profile_picture column to users table
+        conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture TEXT DEFAULT NULL"))
+        conn.commit()
 
 # CORS
 app.add_middleware(
@@ -40,6 +47,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create uploads directory if it doesn't exist
+import os
+os.makedirs("uploads", exist_ok=True)
+
+# Mount uploads directory to serve uploaded files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ---Routers---
 app.include_router(mealplan.router, prefix="/api")

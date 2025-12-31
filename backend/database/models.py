@@ -26,6 +26,7 @@ class User(Base):
     tfa_enabled = Column(Boolean, default=False)
     tfa_verified = Column(Boolean, default=False)
     tfa_secret = Column(String, nullable=True)
+    profile_picture = Column(String, nullable=True)  # Path to user's profile picture
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
