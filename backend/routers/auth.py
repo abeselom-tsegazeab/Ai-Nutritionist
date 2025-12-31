@@ -20,7 +20,6 @@ from core.email_utils import EmailVerification
 from core.audit_logger import log_user_login, log_failed_login, log_user_registration, log_security_event
 import logging
 from core.tfa_manager import TwoFactorAuth
-from core.security import is_admin
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -145,6 +144,60 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
+
+
+def require_role(required_role: str):
+    """
+    Dependency to check if the current user has the required role.
+    Can be used to restrict access to specific endpoints based on user roles.
+    """
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: {required_role} role required"
+            )
+        return current_user
+    return role_checker
+
+
+def require_any_role(required_roles: list):
+    """
+    Dependency to check if the current user has any of the required roles.
+    Can be used to restrict access to specific endpoints based on user roles.
+    """
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in required_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: one of {required_roles} roles required"
+            )
+        return current_user
+    return role_checker
+
+
+def is_user_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Dependency to check if the current user is an admin.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: admin role required"
+        )
+    return current_user
+
+
+def is_user(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Dependency to check if the current user is a regular user.
+    """
+    if current_user.role not in ["user", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: user role required"
+        )
+    return current_user
 
 
 @router.post("/register", response_model=UserResponse)
@@ -579,7 +632,7 @@ def verify_tfa_login(token: str, email: str, db: Session = Depends(get_db)):
 
 @router.get("/users", response_model=list[UserResponse])
 def get_all_users(
-    current_user: User = Depends(is_admin),
+    current_user: User = Depends(is_user_admin),
     db: Session = Depends(get_db)
 ):
     """Get all users - admin only"""
@@ -591,7 +644,7 @@ def get_all_users(
 def update_user_role(
     user_id: int,
     role: str,
-    current_user: User = Depends(is_admin),
+    current_user: User = Depends(is_user_admin),
     db: Session = Depends(get_db)
 ):
     """Update user role - admin only"""
@@ -619,7 +672,7 @@ def update_user_role(
 @router.get("/user/{user_id}", response_model=UserResponse)
 def get_user_by_id(
     user_id: int,
-    current_user: User = Depends(is_admin),
+    current_user: User = Depends(is_user_admin),
     db: Session = Depends(get_db)
 ):
     """Get user by ID - admin only"""

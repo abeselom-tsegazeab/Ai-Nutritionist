@@ -6,7 +6,7 @@ from database.models import MealPlan, MealHistory, User
 from ai.generator import generate_meal_plan
 from ai.pdf_generator import generate_meal_plan_pdf
 from routers.auth import get_current_user
-from core.security import is_admin, require_role
+from routers.auth import is_user_admin
 from fastapi.responses import FileResponse
 import json
 import tempfile
@@ -103,7 +103,7 @@ def get_user_meal_plans(
 
 @router.get("/all", response_model=list[MealPlanResponse])
 def get_all_meal_plans(
-    current_user: User = Depends(is_admin),
+    current_user: User = Depends(is_user_admin),
     db: Session = Depends(get_db)
 ):
     """Get all meal plans - admin only"""
@@ -114,7 +114,7 @@ def get_all_meal_plans(
 @router.delete("/{mealplan_id}")
 def delete_meal_plan(
     mealplan_id: int,
-    current_user: User = Depends(is_admin),
+    current_user: User = Depends(is_user_admin),
     db: Session = Depends(get_db)
 ):
     """Delete a meal plan - admin only"""

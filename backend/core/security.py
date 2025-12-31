@@ -1,59 +1,31 @@
-from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from database.models import User
-from routers.auth import get_current_user
-from database.database import get_db
+from fastapi import HTTPException, status, Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from datetime import datetime, timedelta
 
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
-def require_role(required_role: str):
-    """
-    Dependency to check if the current user has the required role.
-    Can be used to restrict access to specific endpoints based on user roles.
-    """
-    def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role != required_role:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied: {required_role} role required"
-            )
-        return current_user
-    return role_checker
+def get_rate_limit_middleware(app):
+    """Add rate limiting middleware to the app"""
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    return app
 
+# Additional security functions
+def is_valid_origin(request: Request, allowed_origins: list) -> bool:
+    """Check if the request origin is in the allowed list"""
+    origin = request.headers.get("origin")
+    if not origin:
+        return True  # Allow requests without origin header
+    return origin in allowed_origins
 
-def require_any_role(required_roles: list):
-    """
-    Dependency to check if the current user has any of the required roles.
-    Can be used to restrict access to specific endpoints based on user roles.
-    """
-    def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in required_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied: one of {required_roles} roles required"
-            )
-        return current_user
-    return role_checker
-
-
-def is_admin(current_user: User = Depends(get_current_user)) -> User:
-    """
-    Dependency to check if the current user is an admin.
-    """
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: admin role required"
-        )
-    return current_user
-
-
-def is_user(current_user: User = Depends(get_current_user)) -> User:
-    """
-    Dependency to check if the current user is a regular user.
-    """
-    if current_user.role not in ["user", "admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: user role required"
-        )
-    return current_user
+def sanitize_input(input_str: str) -> str:
+    """Basic input sanitization to prevent injection attacks"""
+    # Remove potentially dangerous characters
+    dangerous_chars = ["<", ">", "\"", "'", "(", ")", ";", "&", "|"]
+    sanitized = input_str
+    for char in dangerous_chars:
+        sanitized = sanitized.replace(char, "")
+    return sanitized.strip()
