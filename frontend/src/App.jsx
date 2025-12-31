@@ -13,6 +13,7 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import VerifyEmail from './components/VerifyEmail';
 import AdminPanel from './components/AdminPanel';
+import ProtectedRoute from './components/ProtectedRoute';
 import Footer from './components/Footer';
 import './App.css';
 
@@ -40,14 +41,14 @@ function App() {
               } />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/meal-planner" element={<MealPlanner />} />
+              <Route path="/meal-planner" element={<ProtectedRoute><MealPlanner /></ProtectedRoute>} />
               <Route path="/features" element={<Features />} />
-              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>

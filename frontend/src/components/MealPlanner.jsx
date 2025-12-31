@@ -1,31 +1,80 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 const MealPlanner = () => {
+  const { user, isAuthenticated } = useAuth();
   const [selectedDay, setSelectedDay] = useState(0);
   const [mealType, setMealType] = useState('breakfast');
+  const [mealPlans, setMealPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchMealPlans = async () => {
+      if (isAuthenticated) {
+        try {
+          const token = localStorage.getItem('accessToken');
+          if (!token) {
+            throw new Error('No access token found');
+          }
+          
+          const response = await fetch('http://localhost:8000/api/mealplan/user', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to fetch meal plans');
+          }
+          
+          const data = await response.json();
+          setMealPlans(data);
+        } catch (err) {
+          console.error('Error fetching meal plans:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchMealPlans();
+  }, [isAuthenticated]);
   
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   
-  const meals = {
-    breakfast: [
+  // Use actual meal plans if available, otherwise use example data
+  // The actual meals would be in the history of each meal plan
+  const currentMeals = mealPlans.length > 0 ? 
+    mealPlans.map(plan => ({
+      id: plan.id,
+      name: `${plan.goal.charAt(0).toUpperCase() + plan.goal.slice(1)} Plan`,
+      calories: plan.daily_calories,
+      protein: plan.macro_protein,
+      carbs: plan.macro_carbs,
+      fat: plan.macro_fats,
+      goal: plan.goal,
+      diet_type: plan.diet_type
+    })) : 
+    [
       { name: 'Oatmeal with Berries', calories: 320, protein: 12, carbs: 52, fat: 8 },
       { name: 'Greek Yogurt Parfait', calories: 280, protein: 18, carbs: 35, fat: 6 },
       { name: 'Avocado Toast', calories: 350, protein: 10, carbs: 45, fat: 15 }
-    ],
-    lunch: [
-      { name: 'Grilled Chicken Salad', calories: 420, protein: 35, carbs: 25, fat: 20 },
-      { name: 'Quinoa Bowl', calories: 480, protein: 22, carbs: 55, fat: 18 },
-      { name: 'Turkey Wrap', calories: 380, protein: 28, carbs: 40, fat: 12 }
-    ],
-    dinner: [
-      { name: 'Salmon with Veggies', calories: 450, protein: 38, carbs: 30, fat: 22 },
-      { name: 'Lean Beef Stir Fry', calories: 420, protein: 32, carbs: 35, fat: 18 },
-      { name: 'Vegetable Pasta', calories: 400, protein: 18, carbs: 55, fat: 12 }
-    ]
-  };
+    ];
 
-  const currentMeals = meals[mealType] || [];
-
+  if (loading) {
+    return (
+      <div className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-xl text-gray-300 dark:text-gray-300">Loading your meal plans...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -78,7 +127,7 @@ const MealPlanner = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentMeals.map((meal, index) => (
             <div 
-              key={index}
+              key={meal.id || index}
               className="bg-white/10 dark:bg-gray-800/30 backdrop-blur-md p-6 rounded-xl border border-white/20 dark:border-gray-700 hover:scale-105 transition-transform duration-300 group"
             >
               <div className="flex justify-between items-start mb-4">
@@ -106,7 +155,7 @@ const MealPlanner = () => {
               </div>
               
               <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02]">
-                Add to Plan
+                View Details
               </button>
             </div>
           ))}

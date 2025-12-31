@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const AdminPanel = () => {
   const { user, isAuthenticated } = useAuth();
   const [users, setUsers] = useState([]);
+  const [mealPlans, setMealPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const AdminPanel = () => {
     }
 
     fetchUsers();
+    fetchMealPlans();
   }, [isAuthenticated, user, navigate]);
 
   const fetchUsers = async () => {
@@ -47,6 +49,33 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchMealPlans = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+
+      const response = await fetch('http://localhost:8000/api/mealplan/all', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to fetch meal plans');
+      }
+
+      const data = await response.json();
+      setMealPlans(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const updateUserRole = async (userId, newRole) => {
     try {
       const token = localStorage.getItem('accessToken');
@@ -70,6 +99,37 @@ const AdminPanel = () => {
 
       // Refresh the users list
       fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const deleteMealPlan = async (mealPlanId) => {
+    if (!window.confirm('Are you sure you want to delete this meal plan?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+
+      const response = await fetch(`http://localhost:8000/api/mealplan/${mealPlanId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete meal plan');
+      }
+
+      // Refresh the meal plans list
+      fetchMealPlans();
     } catch (err) {
       setError(err.message);
     }
@@ -182,6 +242,44 @@ const AdminPanel = () => {
               </table>
             </div>
           </div>
+          
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white dark:text-white mb-6">Meal Plan Management</h2>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Goal</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Diet Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Calories</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {mealPlans.map((mealPlan) => (
+                    <tr key={mealPlan.id} className="hover:bg-white/5 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{mealPlan.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{mealPlan.goal}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{mealPlan.diet_type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{mealPlan.daily_calories}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{mealPlan.user_id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button 
+                          onClick={() => deleteMealPlan(mealPlan.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white/5 dark:bg-gray-700/30 rounded-xl p-6">
@@ -203,6 +301,10 @@ const AdminPanel = () => {
                     {users.filter(u => u.is_active).length}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-300">Total Meal Plans</span>
+                  <span className="text-white font-medium">{mealPlans.length}</span>
+                </div>
               </div>
             </div>
 
@@ -214,6 +316,12 @@ const AdminPanel = () => {
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-300"
                 >
                   Refresh Users
+                </button>
+                <button 
+                  onClick={fetchMealPlans}
+                  className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                >
+                  Refresh Meal Plans
                 </button>
                 <button className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-300">
                   System Logs
