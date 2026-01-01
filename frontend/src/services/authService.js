@@ -252,6 +252,41 @@ export const checkAuthStatus = async () => {
   return false;
 };
 
+// Function to update user profile
+export const updateUserProfile = async (profileData) => {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      return { success: false, error: 'No token found' };
+    }
+
+    const response = await fetch('http://localhost:8000/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, user: data };
+    } else {
+      // Handle FastAPI validation errors which come as an array
+      let errorMessage = data.detail || 'Failed to update profile';
+      if (Array.isArray(data.detail)) {
+        // Extract the first error message from FastAPI validation errors
+        errorMessage = data.detail[0]?.msg || 'Validation error occurred';
+      }
+      return { success: false, error: errorMessage, status: response.status };
+    }
+  } catch (error) {
+    return { success: false, error: error.message || 'An error occurred while updating profile' };
+  }
+};
+
 // Function to get current user
 export const getCurrentUser = async () => {
   try {

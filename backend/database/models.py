@@ -27,6 +27,12 @@ class User(Base):
     tfa_verified = Column(Boolean, default=False)
     tfa_secret = Column(String, nullable=True)
     profile_picture = Column(String, nullable=True)  # Path to user's profile picture
+    height = Column(Integer, nullable=True)  # User's height in cm
+    weight = Column(Integer, nullable=True)  # User's weight in kg
+    age = Column(Integer, nullable=True)  # User's age
+    gender = Column(String, nullable=True)  # User's gender
+    activity_level = Column(String, nullable=True)  # User's activity level
+    goal = Column(String, nullable=True)  # User's fitness goal
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

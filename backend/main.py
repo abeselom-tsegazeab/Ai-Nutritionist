@@ -38,6 +38,27 @@ with engine.connect() as conn:
         # Add profile_picture column to users table
         conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture TEXT DEFAULT NULL"))
         conn.commit()
+    
+    # Check if profile-related columns exist
+    # Add columns with appropriate data types
+    if 'height' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN height INTEGER DEFAULT NULL"))
+        conn.commit()
+    if 'weight' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN weight INTEGER DEFAULT NULL"))
+        conn.commit()
+    if 'age' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN age INTEGER DEFAULT NULL"))
+        conn.commit()
+    if 'gender' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT NULL"))
+        conn.commit()
+    if 'activity_level' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN activity_level TEXT DEFAULT NULL"))
+        conn.commit()
+    if 'goal' not in columns:
+        conn.execute(text("ALTER TABLE users ADD COLUMN goal TEXT DEFAULT NULL"))
+        conn.commit()
 
 # CORS
 app.add_middleware(

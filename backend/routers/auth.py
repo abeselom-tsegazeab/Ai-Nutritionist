@@ -402,6 +402,42 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+# Schema for updating user profile
+from pydantic import BaseModel
+
+class UserProfileUpdate(BaseModel):
+    name: str = None
+    height: float = None
+    weight: float = None
+    age: int = None
+    gender: str = None
+    activity_level: str = None
+    goal: str = None
+
+
+@router.put("/profile", response_model=UserResponse)
+def update_user_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user profile information"""
+    # Update allowed fields
+    allowed_fields = {
+        "name", "height", "weight", "age", "gender", "activity_level", "goal"
+    }
+    
+    for field in allowed_fields:
+        value = getattr(profile_data, field)
+        if value is not None:
+            setattr(current_user, field, value)
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+
 @router.post("/logout")
 def logout_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Invalidate the refresh token on logout"""

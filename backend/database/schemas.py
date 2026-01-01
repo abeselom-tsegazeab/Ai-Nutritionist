@@ -26,6 +26,12 @@ class UserResponse(BaseModel):
     tfa_enabled: bool
     tfa_verified: bool
     profile_picture: Optional[str] = None  # Path to user's profile picture
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    activity_level: Optional[str] = None
+    goal: Optional[str] = None
     created_at: datetime
     last_login: Optional[datetime]
 

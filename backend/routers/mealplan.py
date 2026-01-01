@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from database.schemas import MealPlanCreate, MealPlanResponse, MealPlanFullResponse
 from database.database import get_db
 from database.models import MealPlan, MealHistory, User
@@ -51,7 +52,31 @@ async def create_meal_plan(
         db.add(meal_history)
         db.commit()
         
-        return db_meal_plan
+        # Return as response model to ensure proper serialization
+        # Use a separate query to fetch only the needed fields without relationships
+        created_plan = db.execute(
+            select(
+                MealPlan.id,
+                MealPlan.goal,
+                MealPlan.diet_type,
+                MealPlan.daily_calories,
+                MealPlan.macro_protein,
+                MealPlan.macro_carbs,
+                MealPlan.macro_fats,
+                MealPlan.created_at
+            ).where(MealPlan.id == db_meal_plan.id)
+        ).first()
+        
+        return MealPlanResponse(
+            id=created_plan.id,
+            goal=created_plan.goal,
+            diet_type=created_plan.diet_type,
+            daily_calories=created_plan.daily_calories,
+            macro_protein=created_plan.macro_protein,
+            macro_carbs=created_plan.macro_carbs,
+            macro_fats=created_plan.macro_fats,
+            created_at=created_plan.created_at
+        )
     except Exception as e:
         # If generation fails, remove the meal plan record
         db.delete(db_meal_plan)
@@ -68,12 +93,25 @@ def get_meal_plan(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    meal_plan = db.query(MealPlan).filter(
-        MealPlan.id == mealplan_id,
-        MealPlan.user_id == current_user.id
-    ).first()
+    # Query only the specific columns needed to avoid relationship issues
+    result = db.execute(
+        select(
+            MealPlan.id,
+            MealPlan.goal,
+            MealPlan.diet_type,
+            MealPlan.daily_calories,
+            MealPlan.macro_protein,
+            MealPlan.macro_carbs,
+            MealPlan.macro_fats,
+            MealPlan.created_at
+        ).where(
+            MealPlan.id == mealplan_id,
+            MealPlan.user_id == current_user.id
+        )
+    )
+    meal_plan_row = result.first()
     
-    if not meal_plan:
+    if not meal_plan_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meal plan not found"
@@ -81,24 +119,30 @@ def get_meal_plan(
     
     from database.schemas import MealPlanResponse, MealHistoryResponse
     
-    history = db.query(MealHistory).filter(
-        MealHistory.mealplan_id == mealplan_id
-    ).all()
+    # Query history separately
+    history_result = db.execute(
+        select(
+            MealHistory.id,
+            MealHistory.day_number,
+            MealHistory.meals_json,
+            MealHistory.created_at
+        ).where(MealHistory.mealplan_id == mealplan_id)
+    )
     
     # Convert to response models to ensure proper serialization
     mealplan_response = MealPlanResponse(
-        id=meal_plan.id,
-        goal=meal_plan.goal,
-        diet_type=meal_plan.diet_type,
-        daily_calories=meal_plan.daily_calories,
-        macro_protein=meal_plan.macro_protein,
-        macro_carbs=meal_plan.macro_carbs,
-        macro_fats=meal_plan.macro_fats,
-        created_at=meal_plan.created_at
+        id=meal_plan_row.id,
+        goal=meal_plan_row.goal,
+        diet_type=meal_plan_row.diet_type,
+        daily_calories=meal_plan_row.daily_calories,
+        macro_protein=meal_plan_row.macro_protein,
+        macro_carbs=meal_plan_row.macro_carbs,
+        macro_fats=meal_plan_row.macro_fats,
+        created_at=meal_plan_row.created_at
     )
     
     history_responses = []
-    for hist in history:
+    for hist in history_result:
         history_response = MealHistoryResponse(
             id=hist.id,
             day_number=hist.day_number,
@@ -119,24 +163,35 @@ def get_user_meal_plans(
     db: Session = Depends(get_db)
 ):
     from database.schemas import MealPlanResponse
+    from sqlalchemy import select
     
-    # Query meal plans for the current user
-    meal_plans = db.query(MealPlan).filter(
-        MealPlan.user_id == current_user.id
-    ).order_by(MealPlan.created_at.desc()).all()
+    # Query only the specific columns needed to avoid relationship issues
+    result = db.execute(
+        select(
+            MealPlan.id,
+            MealPlan.goal,
+            MealPlan.diet_type,
+            MealPlan.daily_calories,
+            MealPlan.macro_protein,
+            MealPlan.macro_carbs,
+            MealPlan.macro_fats,
+            MealPlan.created_at
+        ).where(MealPlan.user_id == current_user.id)
+        .order_by(MealPlan.created_at.desc())
+    )
     
-    # Convert to response models to ensure proper serialization
+    # Convert rows to response models
     response_models = []
-    for plan in meal_plans:
+    for row in result:
         response_model = MealPlanResponse(
-            id=plan.id,
-            goal=plan.goal,
-            diet_type=plan.diet_type,
-            daily_calories=plan.daily_calories,
-            macro_protein=plan.macro_protein,
-            macro_carbs=plan.macro_carbs,
-            macro_fats=plan.macro_fats,
-            created_at=plan.created_at
+            id=row.id,
+            goal=row.goal,
+            diet_type=row.diet_type,
+            daily_calories=row.daily_calories,
+            macro_protein=row.macro_protein,
+            macro_carbs=row.macro_carbs,
+            macro_fats=row.macro_fats,
+            created_at=row.created_at
         )
         response_models.append(response_model)
     
@@ -149,20 +204,34 @@ def get_all_meal_plans(
     db: Session = Depends(get_db)
 ):
     """Get all meal plans - admin only"""
-    meal_plans = db.query(MealPlan).order_by(MealPlan.created_at.desc()).all()
+    from sqlalchemy import select
     
-    # Convert to response models to ensure proper serialization
+    # Query only the specific columns needed to avoid relationship issues
+    result = db.execute(
+        select(
+            MealPlan.id,
+            MealPlan.goal,
+            MealPlan.diet_type,
+            MealPlan.daily_calories,
+            MealPlan.macro_protein,
+            MealPlan.macro_carbs,
+            MealPlan.macro_fats,
+            MealPlan.created_at
+        ).order_by(MealPlan.created_at.desc())
+    )
+    
+    # Convert rows to response models
     response_models = []
-    for plan in meal_plans:
+    for row in result:
         response_model = MealPlanResponse(
-            id=plan.id,
-            goal=plan.goal,
-            diet_type=plan.diet_type,
-            daily_calories=plan.daily_calories,
-            macro_protein=plan.macro_protein,
-            macro_carbs=plan.macro_carbs,
-            macro_fats=plan.macro_fats,
-            created_at=plan.created_at
+            id=row.id,
+            goal=row.goal,
+            diet_type=row.diet_type,
+            daily_calories=row.daily_calories,
+            macro_protein=row.macro_protein,
+            macro_carbs=row.macro_carbs,
+            macro_fats=row.macro_fats,
+            created_at=row.created_at
         )
         response_models.append(response_model)
     
@@ -176,9 +245,11 @@ def delete_meal_plan(
     db: Session = Depends(get_db)
 ):
     """Delete a meal plan - admin only"""
-    meal_plan = db.query(MealPlan).filter(
-        MealPlan.id == mealplan_id
-    ).first()
+    # Check if meal plan exists for validation
+    result = db.execute(
+        select(MealPlan.id).where(MealPlan.id == mealplan_id)
+    )
+    meal_plan = result.first()
     
     if not meal_plan:
         raise HTTPException(
@@ -186,7 +257,8 @@ def delete_meal_plan(
             detail="Meal plan not found"
         )
     
-    db.delete(meal_plan)
+    # Perform the deletion
+    db.query(MealPlan).filter(MealPlan.id == mealplan_id).delete()
     db.commit()
     
     return {"message": "Meal plan deleted successfully"}

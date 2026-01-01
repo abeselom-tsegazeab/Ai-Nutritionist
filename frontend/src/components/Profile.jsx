@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
+import { updateUserProfile } from '../services/authService';
 
 const Profile = () => {
   const { theme } = useTheme();
@@ -34,15 +35,103 @@ const Profile = () => {
   
   // This effect is now handled above with debounced function
   
+  const [profilePicture, setProfilePicture] = useState(null);
+  
   useEffect(() => {
     if (user) {
       setProfileData(prev => ({
         ...prev,
         name: user.name || prev.name,
         email: user.email || prev.email,
+        height: user.height || prev.height,
+        weight: user.weight || prev.weight,
+        age: user.age || prev.age,
+        gender: user.gender || prev.gender,
+        activityLevel: user.activity_level || prev.activityLevel,
+        goal: user.goal || prev.goal,
       }));
+      
+      // Set profile picture if available
+      if (user.profile_picture) {
+        setProfilePicture(`http://localhost:8000${user.profile_picture}`);
+      }
     }
   }, [user]);
+  
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+      
+      const result = await updateUserProfile(profileData);
+      
+      if (result.success) {
+        // Update the user in the auth context
+        // This would typically update the user in the auth context
+        alert('Profile updated successfully!');
+      } else {
+        alert(`Error updating profile: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    }
+  };
+  
+  const handleProfilePictureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('http://localhost:8000/auth/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Update profile picture in state
+        setProfilePicture(`http://localhost:8000${data.file_path}`);
+        alert('Profile picture updated successfully!');
+        
+        // Refresh user data to get the updated profile picture
+        if (debouncedFetchUserData) {
+          debouncedFetchUserData();
+        }
+      } else {
+        alert(`Error uploading profile picture: ${data.detail || 'Upload failed'}`);
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Error uploading profile picture');
+    }
+  };
   
   const handleInputChange = (e) => {
     setProfileData({
@@ -109,7 +198,7 @@ const Profile = () => {
                   <div className="group relative">
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 dark:border-gray-600/50 transition-all duration-500 group-hover:scale-105 group-hover:shadow-2xl group-hover:shadow-blue-500/20">
                       <img 
-                        src={`https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&color=fff&size=128`} 
+                        src={profilePicture || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random&color=fff&size=128`} 
                         alt="Profile" 
                         className="w-full h-full object-cover"
                       />
@@ -124,12 +213,22 @@ const Profile = () => {
                     <p className="text-gray-400 dark:text-gray-400 mb-4 transition-all duration-300 group-hover:text-gray-300">
                       {user?.email || profileData.email || 'user@example.com'}
                     </p>
-                    <button className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-lg hover:shadow-blue-500/30 group">
+                    <button 
+                      onClick={() => document.getElementById('profilePictureInput').click()}
+                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-lg hover:shadow-blue-500/30 group"
+                    >
                       <span>Change Photo</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </button>
+                    <input 
+                      id="profilePictureInput"
+                      type="file" 
+                      accept="image/*"
+                      className="hidden" 
+                      onChange={handleProfilePictureUpload}
+                    />
                   </div>
                 </div>
                 
@@ -247,7 +346,10 @@ const Profile = () => {
                 </div>
                 
                 <div className="flex justify-end pt-6">
-                  <button className="group relative bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-2xl hover:shadow-blue-500/30 overflow-hidden">
+                  <button 
+                    onClick={handleSaveProfile}
+                    className="group relative bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-2xl hover:shadow-blue-500/30 overflow-hidden"
+                  >
                     <span className="relative z-10">Save Changes</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
@@ -333,7 +435,10 @@ const Profile = () => {
                 </div>
                 
                 <div className="flex justify-end pt-6">
-                  <button className="group relative bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-2xl hover:shadow-blue-500/30 overflow-hidden">
+                  <button 
+                    onClick={handleSaveProfile}
+                    className="group relative bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:scale-105 transform hover:shadow-2xl hover:shadow-blue-500/30 overflow-hidden"
+                  >
                     <span className="relative z-10">Save Preferences</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
