@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../hooks/useAuth';
 import { forgotPassword } from '../services/authService';
 
 const ForgotPassword = () => {
@@ -11,8 +10,8 @@ const ForgotPassword = () => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { loading, error } = useAuth();
   const { theme } = useTheme();
 
   const handleChange = (e) => {
@@ -47,13 +46,19 @@ const ForgotPassword = () => {
     
     if (!validateForm()) return;
 
+    setIsLoading(true);
+    
     try {
       const result = await forgotPassword(formData.email);
       
       if (result.success) {
-        // Show success message
+        // Show success message and redirect to reset password page
         setIsSubmitted(true);
         toast.success('Password reset instructions sent to your email!');
+        // Redirect to reset password page after a short delay
+        setTimeout(() => {
+          navigate('/reset-password');
+        }, 2000);
       } else {
         const errorMessage = result.error || 'Failed to send password reset email. Please try again.';
         setErrors({
@@ -67,6 +72,8 @@ const ForgotPassword = () => {
         general: errorMessage
       });
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -132,11 +139,11 @@ const ForgotPassword = () => {
                 <div className="animate-slide-in-left delay-200">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={isLoading}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
                   >
                     <span className="relative z-10">
-                      {loading ? (
+                      {isLoading ? (
                         <div className="flex items-center justify-center">
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                           Sending...
@@ -185,14 +192,11 @@ const ForgotPassword = () => {
             <div className={`mt-8 bg-white/10 dark:bg-gray-800/30 backdrop-blur-md p-8 rounded-2xl border border-white/20 dark:border-gray-700 shadow-xl ${theme === 'dark' ? 'dark' : ''} animate-fade-in-up`}>
               <div className="space-y-4">
                 <p className="text-gray-300 dark:text-gray-300 text-center">
-                  Didn't receive the email? Check your spam folder or try again.
+                  Redirecting to password reset page...
                 </p>
-                <button
-                  onClick={handleResend}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02]"
-                >
-                  Resend Instructions
-                </button>
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
               </div>
 
               <div className="mt-6 text-center animate-fade-in delay-200">

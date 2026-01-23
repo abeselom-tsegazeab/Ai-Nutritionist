@@ -537,8 +537,32 @@ def resend_verification(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/forgot-password")
-def forgot_password(email: str, db: Session = Depends(get_db)):
+async def forgot_password(request: Request, db: Session = Depends(get_db)):
     """Generate and send password reset token"""
+    # Handle both form data and JSON data
+    try:
+        content_type = request.headers.get("content-type", "")
+        
+        if "application/json" in content_type:
+            # Handle JSON request
+            body = await request.json()
+            email = body.get("email")
+        else:
+            # Handle form data request
+            form = await request.form()
+            email = form.get("email")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request format"
+        )
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is required"
+        )
+    
     user = db.query(User).filter(User.email == email).first()
     
     if not user:
@@ -564,8 +588,40 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
 
 
 @router.post("/reset-password")
-def reset_password(reset_code: str, new_password: str, db: Session = Depends(get_db)):
+async def reset_password(request: Request, db: Session = Depends(get_db)):
     """Reset user password using the OTP reset code"""
+    # Handle both form data and JSON data
+    try:
+        content_type = request.headers.get("content-type", "")
+        
+        if "application/json" in content_type:
+            # Handle JSON request
+            body = await request.json()
+            reset_code = body.get("reset_code")
+            new_password = body.get("new_password")
+        else:
+            # Handle form data request
+            form = await request.form()
+            reset_code = form.get("reset_code")
+            new_password = form.get("new_password")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request format"
+        )
+    
+    if not reset_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset code is required"
+        )
+    
+    if not new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password is required"
+        )
+    
     # Find user with matching reset code
     user = db.query(User).filter(User.password_reset_token == reset_code).first()
     
