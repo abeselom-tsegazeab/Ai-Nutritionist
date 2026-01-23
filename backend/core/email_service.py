@@ -27,7 +27,8 @@ class EmailService:
             self.email_password = getattr(settings, 'EMAIL_PASSWORD', '')
         
         # Determine if using secure connection based on settings
-        self.use_tls = getattr(settings, 'SMTP_SECURE', getattr(settings, 'EMAIL_USE_TLS', True))
+        # Prioritize EMAIL_USE_TLS over SMTP_SECURE for better Gmail compatibility
+        self.use_tls = getattr(settings, 'EMAIL_USE_TLS', True)
         
         # Validate SMTP port
         if self.smtp_port not in [25, 465, 587]:
@@ -55,6 +56,13 @@ class EmailService:
             return False
             
         try:
+            # Debug logging
+            logger.info(f"Attempting to send email to {recipient_email}")
+            logger.info(f"SMTP Server: {self.smtp_server}:{self.smtp_port}")
+            logger.info(f"Email Address: {self.email_address}")
+            logger.info(f"Use TLS: {self.use_tls}, Use SSL: {getattr(self, 'use_ssl', 'not set')}")
+            logger.info(f"Settings EMAIL_USE_TLS: {getattr(settings, 'EMAIL_USE_TLS', 'not found')}")
+            
             # Create message
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
